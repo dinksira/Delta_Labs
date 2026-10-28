@@ -42,6 +42,7 @@ import { DashboardPageView } from '@/modules/Dashboard/views/DashboardPageView';
 import { ProfileView } from '@/modules/Profile/views/ProfileView';
 import { SettingsView } from '@/modules/Settings/views/SettingsView';
 import { FeaturesPageView } from '@/modules/Features/views/FeaturesPageView';
+import { WalletPageView } from '@/modules/Wallet';
 
 // Competition module views
 import {
@@ -55,6 +56,7 @@ import {
   GameDetailPage,
   GamesPage,
   GameStageDuelPage,
+  HostCompetitionPage,
   LiveDuelRoomPage,
   LiveDuelsPage,
   PublicCompetitionPage,
@@ -237,12 +239,14 @@ const ROUTES: readonly RouteDefinition[] = [
   { path: '/dashboard', type: 'app', render: () => <DashboardPageView /> },
   { path: '/profile', type: 'app', render: () => <ProfileView /> },
   { path: '/settings', type: 'app', render: () => <SettingsView /> },
+  { path: '/wallet', type: 'app', render: () => <WalletPageView /> },
 
   // ===== Competitions =====
   { path: '/features/competitions', type: 'app', render: () => <PublicCompetitionPage /> },
   { path: '/features/competitions/list', type: 'app', render: () => <ActiveCompetitionPage /> },
   { path: '/features/competitions/topic-battles', type: 'app', render: () => <ActiveCompetitionPage /> },
-  { path: '/features/competitions/host', type: 'app', render: () => <CreateBattleTopicPage /> },
+  { path: '/features/competitions/topic-battles/create', type: 'app', render: () => <CreateBattleTopicPage /> },
+  { path: '/features/competitions/host', type: 'app', render: () => <HostCompetitionPage /> },
   { path: '/features/competitions/battles/:id', type: 'app', render: () => <TopicBattleDuelPage /> },
   { path: '/features/competitions/live-duels', type: 'app', render: () => <LiveDuelsPage /> },
   { path: '/features/competitions/games', type: 'app', render: () => <GamesPage /> },
@@ -460,9 +464,9 @@ const AppContent: React.FC = () => {
   );
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-background">
+    <div className="relative h-screen w-screen overflow-hidden bg-background">
       <NativeTitleBar />
-      <div className="flex-1 overflow-hidden">
+      <div className="h-full w-full overflow-hidden">
         {type === 'app' ? (
           <AppShell>{element}</AppShell>
         ) : (
@@ -473,6 +477,7 @@ const AppContent: React.FC = () => {
       </div>
     </div>
   );
+
 };
 
 /**

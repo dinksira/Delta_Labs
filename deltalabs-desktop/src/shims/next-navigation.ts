@@ -162,6 +162,12 @@ export function useParams<
   return params as unknown as TParams;
 }
 
+export function redirect(url: string): void {
+  if (typeof window !== 'undefined') {
+    window.location.hash = url.startsWith('/') ? `#${url}` : `#/${url}`;
+  }
+}
+
 // ============================================================================
 // EXPORTS
 // ============================================================================
@@ -170,5 +176,7 @@ export default {
   useRouter,
   usePathname,
   useSearchParams,
-  useParams
+  useParams,
+  redirect,
 };
+

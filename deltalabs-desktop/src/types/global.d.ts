@@ -14,10 +14,13 @@ declare global {
       minimize: () => void;
       maximize: () => void;
       close: () => void;
+      isMaximized?: () => Promise<boolean>;
+      onMaximizeChange?: (callback: (isMaximized: boolean) => void) => () => void;
     };
     platform: string;
     isElectron: boolean;
   }
+
 
   interface Window {
     electron?: ElectronAPI;

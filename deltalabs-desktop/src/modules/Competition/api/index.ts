@@ -4,9 +4,19 @@ import type { GameMode } from "@/modules/Competition/types/hub";
 import type { ChampionshipApiResponse } from "@/modules/Competition/types/championship";
 import type { CreateChampionshipPayload } from "@/modules/Competition/types/championship";
 import type { CompetitionGamesResponse } from "@/modules/Competition/types/games";
-import type { TopicBattle, TopicBattleList } from "@/modules/Competition/types/topicBattle";
+import type {
+  TopicBattle,
+  TopicBattleLeaderboard,
+  TopicBattleList,
+} from "@/modules/Competition/types/topicBattle";
 import type { CodingQuestion } from "@/modules/Competition/types/createBattle";
 import type { DuelLeaderboardEntry, ParticipantAnswer } from "@/modules/Competition/types/duelQuiz";
+import type {
+  IntegrityEventResult,
+  IntegrityEventType,
+  TopicBattleAnswerResult,
+} from "@/modules/Competition/types/integrity";
+import { toAnswerPayload } from "@/modules/Competition/types/integrity";
 import type {
   CodeExecuteResponse,
   CodeSubmitResponse,
@@ -88,6 +98,15 @@ export async function fetchTopicBattles() {
 
 export async function fetchTopicBattle(id: string) {
   return apiClient.get<TopicBattle>(`/v1/competitions/topic-battles/${id}`);
+}
+
+/**
+ * Server-computed standings for a battle
+ * (`GET /v1/competitions/topic-battles/{id}/leaderboard`). Ranks and points come
+ * from persisted completion records, never from client-supplied scores.
+ */
+export async function fetchTopicBattleLeaderboard(id: string) {
+  return apiClient.get<TopicBattleLeaderboard>(`/v1/competitions/topic-battles/${id}/leaderboard`);
 }
 
 export async function joinTopicBattle(id: string) {
@@ -205,6 +224,61 @@ export async function submitLiveDuelAnswer(
 
 export async function completeTopicBattle(id: string) {
   return apiClient.post<TopicBattle>(`/v1/competitions/topic-battles/${id}/complete`);
+}
+
+/**
+ * Submit one answer for server-side grading
+ * (`POST /v1/competitions/topic-battles/{id}/answers`).
+ *
+ * This is the only thing that decides whether an answer is correct. The client
+ * no longer holds the answer key, so a verdict here is the score — which is why
+ * `latencyMs` is reported alongside it: the server cannot measure how long a
+ * participant actually spent, so it can only ask.
+ *
+ * Idempotent per question on the server, so a retry after a dropped response is
+ * safe to make blindly.
+ */
+export async function submitTopicBattleAnswer(input: {
+  battleId: string;
+  questionId: string;
+  answer: ParticipantAnswer;
+  latencyMs?: number;
+}): Promise<TopicBattleAnswerResult> {
+  return apiClient.post<TopicBattleAnswerResult>(
+    `/v1/competitions/topic-battles/${input.battleId}/answers`,
+    {
+      json: {
+        questionId: input.questionId,
+        answer: toAnswerPayload(input.answer),
+        latencyMs: input.latencyMs,
+      },
+    },
+  );
+}
+
+/**
+ * Report a proctoring signal (`POST .../integrity-events`).
+ *
+ * Advisory: the response only says how many signals have accumulated and
+ * whether that crossed the review threshold. It never affects the score, so a
+ * failed report is not worth surfacing to the player.
+ */
+export async function recordTopicBattleIntegrityEvent(input: {
+  battleId: string;
+  eventType: IntegrityEventType;
+  questionId?: string;
+  detail?: Record<string, unknown>;
+}): Promise<IntegrityEventResult> {
+  return apiClient.post<IntegrityEventResult>(
+    `/v1/competitions/topic-battles/${input.battleId}/integrity-events`,
+    {
+      json: {
+        eventType: input.eventType,
+        questionId: input.questionId ?? "",
+        detail: input.detail ?? {},
+      },
+    },
+  );
 }
 
 /** Payload for POST /v1/competitions/execute (Run: compile + run once). */

@@ -26,10 +26,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Flag, Radio } from "lucide-react";
 
-import { LiveDuelWorkspaceTemplate } from "@/components/templates/LiveDuelWorkspaceTemplate/LiveDuelWorkspaceTemplate";
-import { HostControlPanel } from "@/components/organisms/HostControlPanel/HostControlPanel";
-import { LeaveLiveDuelModal } from "@/components/organisms/LeaveLiveDuelModal/LeaveLiveDuelModal";
-import { QuestionModal } from "@/components/organisms/QuestionModal/QuestionModal";
+import { LiveDuelWorkspaceTemplate } from "@/components/templates/LiveDuelWorkspaceTemplate";
+import { HostControlPanel } from "@/components/organisms/HostControlPanel";
+import { LeaveLiveDuelModal } from "@/components/organisms/LeaveLiveDuelModal";
+import { QuestionModal } from "@/components/organisms/QuestionModal";
 import { Button } from "@/components/theme/Button";
 import { useAuthSession } from "@/contexts/AuthSession_Context";
 import {
@@ -39,10 +39,12 @@ import {
   submitLiveDuelAnswer,
 } from "@/modules/Competition/api";
 import { LiveDuelProvider } from "@/modules/Competition/context/LiveDuelContext";
-import { useLiveDuel } from "@/modules/Competition/hooks/useLiveDuel";
-import { useLiveDuelRTC } from "@/modules/Competition/hooks/useLiveDuelRTC";
-import { useLiveDuelSocket } from "@/modules/Competition/hooks/useLiveDuelSocket";
-import { useLiveMediaStream } from "@/modules/Competition/hooks/useLiveMediaStream";
+import {
+  useLiveDuel,
+  useLiveDuelRTC,
+  useLiveDuelSocket,
+  useLiveMediaStream,
+} from "@/modules/Competition/hooks";
 import {
   buildLiveDuelRoom,
   getLiveDuelEntry,

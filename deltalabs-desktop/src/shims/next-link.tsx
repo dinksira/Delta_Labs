@@ -22,6 +22,8 @@ export interface LinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   prefetch?: boolean;
   /** Accepted for Next.js parity; no-op in the desktop. */
   replace?: boolean;
+  /** Accepted for Next.js parity; no-op in the desktop. */
+  scroll?: boolean;
 }
 
 // ============================================================================

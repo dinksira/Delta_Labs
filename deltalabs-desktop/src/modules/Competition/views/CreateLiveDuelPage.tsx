@@ -17,8 +17,8 @@ import { useCallback, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { LiveDuelCreateTemplate } from "@/components/templates/LiveDuelCreateTemplate/LiveDuelCreateTemplate";
-import { LiveDuelCreateForm } from "@/components/organisms/LiveDuelCreateForm/LiveDuelCreateForm";
+import { LiveDuelCreateTemplate } from "@/components/templates/LiveDuelCreateTemplate";
+import { LiveDuelCreateForm } from "@/components/organisms/LiveDuelCreateForm";
 import { createLiveDuelRoom, type CreateLiveDuelApiPayload } from "@/modules/Competition/api";
 import { useAuthSession } from "@/contexts/AuthSession_Context";
 import { upsertLiveDuelEntry } from "@/modules/Competition/data/liveDuelsCatalog";

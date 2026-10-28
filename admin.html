@@ -1,0 +1,2658 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delta Labs — Command Center & Super Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #090b10;
+      --bg-surface: #0f141f;
+      --bg-card: rgba(18, 24, 38, 0.75);
+      --bg-glass: rgba(23, 32, 51, 0.55);
+      --bg-card-hover: rgba(28, 40, 64, 0.85);
+      
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --border-focus: rgba(0, 240, 255, 0.35);
+      --border-glow: rgba(99, 102, 241, 0.4);
+
+      --primary: #00f0ff;
+      --primary-rgb: 0, 240, 255;
+      --primary-dim: rgba(0, 240, 255, 0.12);
+      
+      --accent: #6366f1;
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-faint: #64748b;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+
+      --font-heading: 'Syne', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --shadow-glow: 0 0 25px rgba(0, 240, 255, 0.15);
+      --shadow-card: 0 12px 36px -8px rgba(0, 0, 0, 0.55);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 10%, rgba(0, 240, 255, 0.07) 0%, transparent 45%),
+        radial-gradient(circle at 50% 90%, rgba(168, 85, 247, 0.06) 0%, transparent 40%),
+        linear-gradient(to bottom, rgba(9, 11, 16, 0.94), rgba(9, 11, 16, 0.99));
+      background-attachment: fixed;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-base);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 280px;
+      background: rgba(13, 17, 27, 0.9);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .brand-container {
+      padding: 24px 22px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #00f0ff 0%, #6366f1 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.35);
+      position: relative;
+    }
+    .brand-logo svg {
+      width: 24px;
+      height: 24px;
+      fill: #090b10;
+    }
+
+    .brand-info h1 {
+      font-family: var(--font-heading);
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(120deg, #fff 40%, #00f0ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-dim);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      padding: 2px 7px;
+      border-radius: 99px;
+      letter-spacing: 0.5px;
+      display: inline-block;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+
+    .nav-section {
+      padding: 18px 14px 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-faint);
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 0 12px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      position: relative;
+      user-select: none;
+    }
+
+    .nav-item svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2;
+      transition: transform 0.2s;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(90deg, rgba(0, 240, 255, 0.12) 0%, rgba(99, 102, 241, 0.05) 100%);
+      color: var(--primary);
+      font-weight: 600;
+      border: 1px solid rgba(0, 240, 255, 0.22);
+      box-shadow: 0 4px 16px -4px rgba(0, 240, 255, 0.15);
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: -12px;
+      top: 25%;
+      height: 50%;
+      width: 4px;
+      border-radius: 0 4px 4px 0;
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+    }
+
+    .nav-counter {
+      margin-left: auto;
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      padding: 2px 7px;
+      border-radius: 99px;
+      color: var(--text-muted);
+    }
+    .nav-counter.alert {
+      background: rgba(244, 63, 94, 0.2);
+      color: #fda4af;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid var(--border-subtle);
+      background: rgba(9, 11, 16, 0.5);
+    }
+
+    .operator-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+    }
+    .operator-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(45deg, #10b981, #00f0ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #000;
+      font-size: 13px;
+    }
+    .operator-info {
+      line-height: 1.25;
+      flex: 1;
+    }
+    .operator-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .operator-role {
+      font-size: 11px;
+      color: var(--accent-emerald);
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .status-dot-pulse {
+      width: 6px;
+      height: 6px;
+      background: var(--accent-emerald);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-emerald);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* MAIN CONTENT */
+    .main-wrapper {
+      margin-left: 280px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* TOP HEADER */
+    .topbar {
+      height: 72px;
+      background: rgba(13, 17, 27, 0.7);
+      backdrop-filter: blur(25px);
+      border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 0;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      gap: 20px;
+    }
+
+    .topbar-search {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      width: 380px;
+      transition: all 0.2s;
+    }
+    .topbar-search:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
+      background: rgba(255, 255, 255, 0.07);
+    }
+    .topbar-search input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 13.5px;
+      width: 100%;
+      font-family: var(--font-body);
+    }
+    .topbar-search input::placeholder {
+      color: var(--text-faint);
+    }
+    .kbd-shortcut {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .backend-health-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: #34d399;
+    }
+
+    .env-tag {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #c7d2fe;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+    .btn-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      width: 16px;
+      height: 16px;
+      background: var(--accent-rose);
+      border-radius: 50%;
+      font-size: 9px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--bg-surface);
+    }
+
+    /* CONTENT BODY */
+    .content-area {
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    /* PAGE HEADER */
+    .dashboard-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .dashboard-title-group h2 {
+      font-family: var(--font-heading);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+    .dashboard-title-group p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00f0ff 0%, #3b82f6 100%);
+      color: #090b10;
+      font-weight: 700;
+      font-size: 13.5px;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s;
+      box-shadow: 0 4px 18px rgba(0, 240, 255, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0, 240, 255, 0.5);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      font-weight: 600;
+      font-size: 13.5px;
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: var(--shadow-card);
+    }
+    .stat-card:hover {
+      border-color: rgba(0, 240, 255, 0.3);
+      transform: translateY(-3px);
+      box-shadow: 0 16px 40px -10px rgba(0, 240, 255, 0.12);
+    }
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, rgba(0, 240, 255, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .stat-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .stat-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    .stat-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stat-value {
+      font-family: var(--font-heading);
+      font-size: 32px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+    .stat-foot {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .trend-up {
+      color: var(--accent-emerald);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .trend-neutral {
+      color: var(--text-faint);
+    }
+
+    /* TABS SYSTEM */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* CARD CONTAINER */
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 20px 26px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .panel-title {
+      font-family: var(--font-heading);
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .panel-subtitle {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      font-family: var(--font-body);
+      font-weight: 400;
+    }
+
+    /* DATA TABLE */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 14px 24px;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-faint);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    td {
+      padding: 16px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-main);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      letter-spacing: 0.3px;
+    }
+    .badge-live {
+      background: rgba(244, 63, 94, 0.12);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+    .badge-active {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .badge-filling {
+      background: rgba(245, 158, 11, 0.12);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .badge-judge {
+      background: rgba(99, 102, 241, 0.15);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    .badge-flagged {
+      background: rgba(239, 68, 68, 0.18);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    /* ACTION BUTTONS IN TABLES */
+    .table-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .action-btn-sm {
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .action-btn-sm:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .action-btn-danger {
+      color: #f87171;
+      border-color: rgba(248, 113, 113, 0.25);
+    }
+    .action-btn-danger:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    /* LIVE TELEMETRY STREAM & RADAR */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 1100px) {
+      .telemetry-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .realtime-feed {
+      max-height: 440px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px;
+    }
+
+    .feed-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      transition: background 0.2s;
+    }
+    .feed-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .feed-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+    .feed-content {
+      flex: 1;
+    }
+    .feed-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+    }
+    .feed-meta {
+      font-size: 12px;
+      color: var(--text-faint);
+      margin-top: 2px;
+    }
+    .feed-time {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-faint);
+    }
+
+    /* GAUGES & DIAGNOSTICS */
+    .diagnostics-panel {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .diag-metric {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .diag-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .diag-bar-track {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 99px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .diag-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* MODAL */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+    }
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-dialog {
+      width: 90%;
+      max-width: 640px;
+      background: #0f1422;
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 240, 255, 0.15);
+      overflow: hidden;
+      transform: scale(0.95);
+      transition: transform 0.25s ease;
+    }
+    .modal-backdrop.open .modal-dialog {
+      transform: scale(1);
+    }
+
+    .modal-head {
+      padding: 22px 26px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-head h3 {
+      font-family: var(--font-heading);
+      font-size: 19px;
+      font-weight: 700;
+    }
+    .modal-body {
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .modal-foot {
+      padding: 18px 26px;
+      background: rgba(0, 0, 0, 0.25);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .form-input, .form-select, .form-textarea {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 13.5px;
+      outline: none;
+      font-family: var(--font-body);
+      transition: border 0.2s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--primary);
+    }
+    .form-textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    /* TOAST NOTIFICATIONS */
+    .toast-container {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      background: rgba(15, 20, 34, 0.95);
+      border: 1px solid var(--primary);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 240, 255, 0.2);
+      backdrop-filter: blur(14px);
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      color: #fff;
+      font-size: 13.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideToast 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      pointer-events: auto;
+    }
+    @keyframes slideToast {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* CODE BLOCK INSPECTION */
+    .code-preview {
+      background: #06080e;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #38bdf8;
+      overflow-x: auto;
+      max-height: 180px;
+    }
+
+    /* TOGGLE SWITCH */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      transition: .3s;
+      border-radius: 34px;
+      border: 1px solid var(--border-subtle);
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+      background-color: #000;
+    }
+
+    /* MINI CHART CANVAS */
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      height: 240px;
+      padding: 10px 0;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="brand-container">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2L1 21h22L12 2zm0 4.2L19.4 19H4.6L12 6.2z"/>
+        </svg>
+      </div>
+      <div class="brand-info">
+        <h1>DELTA LABS</h1>
+        <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
+          <span class="brand-badge">CORE ADMIN</span>
+          <span style="font-size: 11px; color: var(--text-faint); font-family: var(--font-mono);">v2.4-prod</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-section">Orchestration</div>
+    <ul class="nav-list">
+      <li class="nav-item active" data-tab="tab-overview">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+        </svg>
+        <span>Overview & Telemetry</span>
+      </li>
+
+      <li class="nav-item" data-tab="tab-competitions">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        <span>Topic Battles & Duels</span>
+        <span class="nav-counter" id="active-battles-count">14 Active</span>
+      </li>
+
+      <li class="nav-item" data-tab="tab-championship">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+        </svg>
+        <span>Season Championship</span>
+      </li>
+
+      <li class="nav-item" data-tab="tab-anticheat">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <span>Anti-Cheat & Flagged</span>
+        <span class="nav-counter alert" id="flagged-incidents-count">3 Pending</span>
+      </li>
+
+      <li class="nav-item" data-tab="tab-grading">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <span>Subjective Grading</span>
+        <span class="nav-counter">6 Queue</span>
+      </li>
+    </ul>
+
+    <div class="nav-section">Platform Ecosystem</div>
+    <ul class="nav-list" style="flex: initial; margin-bottom: 12px;">
+      <li class="nav-item" data-tab="tab-courses">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+        </svg>
+        <span>Courses, Reels & Q&A</span>
+      </li>
+
+      <li class="nav-item" data-tab="tab-wallets">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+        <span>Wallets & ETB Payouts</span>
+      </li>
+
+      <li class="nav-item" data-tab="tab-judge0">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+        </svg>
+        <span>Judge0 & Sandboxes</span>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div class="operator-profile">
+        <div class="operator-avatar">DA</div>
+        <div class="operator-info">
+          <div class="operator-name">Delta Admin Ops</div>
+          <div class="operator-role">
+            <span class="status-dot-pulse"></span> Root Authority
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN WRAPPER ================= -->
+  <main class="main-wrapper">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-search">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-faint);">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input type="text" placeholder="Search room ID, student, battle name, IP or token..." id="globalSearchInput">
+        <span class="kbd-shortcut">⌘K</span>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="env-tag">RENDER CLOUD · US-EAST</div>
+        <div class="backend-health-pill">
+          <span class="status-dot-pulse" style="background:#10b981;"></span>
+          API: ONLINE (42ms)
+        </div>
+
+        <button class="icon-btn" title="Refresh Live Data" onclick="refreshLiveData()">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+        </button>
+
+        <button class="icon-btn" title="Notifications">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+          </svg>
+          <span class="btn-badge">3</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="content-area">
+
+      <!-- ================= TAB: OVERVIEW & TELEMETRY ================= -->
+      <section id="tab-overview" class="tab-content active">
+        <div class="dashboard-header">
+          <div class="dashboard-title-group">
+            <h2>Command Center & Operations</h2>
+            <p>Real-time system telemetry across WebSockets, Redis Pub/Sub, MongoDB clusters, and Judge0 runners.</p>
+          </div>
+          <div style="display:flex; gap:12px;">
+            <button class="btn-secondary" onclick="openQuickActionModal('export-metrics')">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Dump Telemetry Log
+            </button>
+            <button class="btn-primary" onclick="openQuickActionModal('new-season-or-duel')">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Broadcast Arena Event
+            </button>
+          </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid" style="margin-top:24px;">
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-label">Live Duel Rooms</span>
+              <div class="stat-icon" style="background:rgba(244,63,94,0.15); color:#f43f5e;">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              </div>
+            </div>
+            <div class="stat-value" id="val-active-rooms">8</div>
+            <div class="stat-foot">
+              <span class="trend-up">↑ 124 Participants</span>
+              <span class="trend-neutral">· 428 WebRTC Peers</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-label">Topic Battles (Scheduled)</span>
+              <div class="stat-icon" style="background:rgba(0,240,255,0.15); color:var(--primary);">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              </div>
+            </div>
+            <div class="stat-value">16</div>
+            <div class="stat-foot">
+              <span class="trend-up">11 Filling</span>
+              <span class="trend-neutral">· 5 In-Flight</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-label">Judge0 Execution Load</span>
+              <div class="stat-icon" style="background:rgba(168,85,247,0.15); color:#c084fc;">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+              </div>
+            </div>
+            <div class="stat-value" id="judge0-throughput">48 /min</div>
+            <div class="stat-foot">
+              <span class="trend-up">99.4% Pass Rate</span>
+              <span class="trend-neutral">· Avg 420ms</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-label">Total ETB Prize Pool</span>
+              <div class="stat-icon" style="background:rgba(16,185,129,0.15); color:#10b981;">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+            </div>
+            <div class="stat-value">ETB 145,200</div>
+            <div class="stat-foot">
+              <span class="trend-up">ETB 24,500 Locked</span>
+              <span class="trend-neutral">· 94 Disbursed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TELEMETRY & LIVE EVENTS SPLIT -->
+        <div class="telemetry-grid" style="margin-top:24px;">
+          <!-- LIVE FEED -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">
+                  <span class="status-dot-pulse" style="background:var(--primary); box-shadow:0 0 10px var(--primary);"></span>
+                  Real-Time Event Bus (Redis Pub/Sub & WebSockets)
+                </div>
+                <div class="panel-subtitle">Live stream from channel prefixes: `live_duel:*`, `competition:events`, `auth:events`</div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="action-btn-sm" onclick="clearFeedLog()">Clear</button>
+                <button class="action-btn-sm" id="pauseFeedBtn" onclick="toggleFeedStream()">Pause</button>
+              </div>
+            </div>
+            <div class="realtime-feed" id="realtimeFeedContainer">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- DIAGNOSTICS & SYSTEM STATUS -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Infrastructure Health</div>
+                <div class="panel-subtitle">Backend and container metrics</div>
+              </div>
+            </div>
+            <div class="diagnostics-panel">
+              <div class="diag-metric">
+                <div class="diag-header">
+                  <span>WebSocket Connections</span>
+                  <span style="font-family:var(--font-mono); color:var(--primary);" id="wsConnNum">312 / 1000</span>
+                </div>
+                <div class="diag-bar-track">
+                  <div class="diag-bar-fill" style="width: 31%; background: linear-gradient(90deg, #00f0ff, #3b82f6);"></div>
+                </div>
+              </div>
+
+              <div class="diag-metric">
+                <div class="diag-header">
+                  <span>Judge0 Sandbox Pool</span>
+                  <span style="font-family:var(--font-mono); color:#a855f7;">44% Capacity</span>
+                </div>
+                <div class="diag-bar-track">
+                  <div class="diag-bar-fill" style="width: 44%; background: linear-gradient(90deg, #a855f7, #ec4899);"></div>
+                </div>
+              </div>
+
+              <div class="diag-metric">
+                <div class="diag-header">
+                  <span>MongoDB Connection Pool</span>
+                  <span style="font-family:var(--font-mono); color:#10b981;">18 / 100 Active</span>
+                </div>
+                <div class="diag-bar-track">
+                  <div class="diag-bar-fill" style="width: 18%; background: #10b981;"></div>
+                </div>
+              </div>
+
+              <div class="diag-metric">
+                <div class="diag-header">
+                  <span>Background Jobs Sweeper</span>
+                  <span style="font-family:var(--font-mono); color:#fbbf24;">Tick: 30s (OK)</span>
+                </div>
+                <div class="diag-bar-track">
+                  <div class="diag-bar-fill" style="width: 100%; background: #fbbf24;"></div>
+                </div>
+              </div>
+
+              <div style="margin-top:10px; padding:12px; background:rgba(0,0,0,0.3); border-radius:var(--radius-md); border:1px solid var(--border-subtle); font-size:12px;">
+                <div style="font-weight:600; color:#fff; margin-bottom:4px;">Sweeper Cron Diagnostics</div>
+                <div style="color:var(--text-faint); font-family:var(--font-mono);">
+                  ✓ launch_due_scheduled_battles: 0 due<br>
+                  ✓ sweep_stale_filling_battles: 1 pruned<br>
+                  ✓ sweep_stale_live_duels: 0 pruned (TTL 30m)
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVITY TIMELINE GRAPH -->
+        <div class="panel" style="margin-top:24px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Live Duel Concurrents & Judge0 Executions (Past 24 Hours)</div>
+              <div class="panel-subtitle">Aggregated per-hour activity across Web and Electron Desktop clients</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <span class="badge" style="background:rgba(0,240,255,0.1); color:var(--primary); border:1px solid rgba(0,240,255,0.3);">● Live Duels</span>
+              <span class="badge" style="background:rgba(168,85,247,0.1); color:#c084fc; border:1px solid rgba(168,85,247,0.3);">● Judge0 Submissions</span>
+            </div>
+          </div>
+          <div class="canvas-container" style="padding: 20px 26px;">
+            <canvas id="overviewChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= TAB: TOPIC BATTLES & DUELS ================= -->
+      <section id="tab-competitions" class="tab-content">
+        <div class="dashboard-header">
+          <div class="dashboard-title-group">
+            <h2>Competition Fleet Management</h2>
+            <p>Inspect Topic Battles, active WebRTC Live Duels, stage states, participants, and force controls.</p>
+          </div>
+          <div style="display:flex; gap:12px;">
+            <button class="btn-secondary" onclick="openCreateBattleModal()">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Create Topic Battle
+            </button>
+            <button class="btn-primary" onclick="openCreateLiveDuelModal()">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              Spin Up Live Duel Room
+            </button>
+          </div>
+        </div>
+
+        <!-- LIVE DUELS ACTIVE ROOMS -->
+        <div class="panel" style="margin-top:24px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">
+                <span style="display:inline-block; width:10px; height:10px; background:#f43f5e; border-radius:50%; box-shadow:0 0 10px #f43f5e;"></span>
+                Active 1v1 & Group Live Duel Rooms (WebSocket / WebRTC Mesh)
+              </div>
+              <div class="panel-subtitle">Real-time state synced via Redis channel: `live_duel:{room_id}`</div>
+            </div>
+            <span class="badge badge-live">4 Rooms In Duel</span>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Room ID & Title</th>
+                  <th>Host / Referee</th>
+                  <th>Mode / Topic</th>
+                  <th>Presence / Peers</th>
+                  <th>Current Question</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="liveDuelTableBody">
+                <tr>
+                  <td>
+                    <div style="font-weight:600; color:#fff;">duel-rm-9081</div>
+                    <div style="font-size:11px; color:var(--text-faint); font-family:var(--font-mono);">WebRTC Mesh #2</div>
+                  </td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-weight:600; color:#fff;">Dr. Abebe K.</span>
+                      <span class="badge" style="background:rgba(255,255,255,0.05); font-size:10px;">Verified Host</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="color:#fff;">Algorithms & Data Structures</div>
+                    <div style="font-size:11px; color:var(--text-faint);">1v1 Head-to-Head · ETB 5,000</div>
+                  </td>
+                  <td>
+                    <div style="font-family:var(--font-mono); color:var(--accent-emerald);">2/2 Active · 38 Viewers</div>
+                    <div style="font-size:11px; color:var(--text-faint);">Audio: 2 Speaking</div>
+                  </td>
+                  <td>
+                    <span style="color:#fff; font-weight:600;">Q3 of 10</span> (Graph BFS traversal)
+                  </td>
+                  <td><span class="badge badge-live">DUEL_IN_PROGRESS</span></td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="action-btn-sm" onclick="inspectRoom('duel-rm-9081')">Spectate</button>
+                      <button class="action-btn-sm action-btn-danger" onclick="forceEndDuel('duel-rm-9081')">Force End</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <div style="font-weight:600; color:#fff;">duel-rm-8412</div>
+                    <div style="font-size:11px; color:var(--text-faint); font-family:var(--font-mono);">WebRTC Mesh #1</div>
+                  </td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-weight:600; color:#fff;">Selamawit T.</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="color:#fff;">React 19 & Next.js Internals</div>
+                    <div style="font-size:11px; color:var(--text-faint);">Multi-challenger · Free Entry</div>
+                  </td>
+                  <td>
+                    <div style="font-family:var(--font-mono); color:var(--accent-emerald);">8/8 Active · 112 Viewers</div>
+                  </td>
+                  <td>
+                    <span style="color:#fff; font-weight:600;">Q7 of 12</span> (Server Actions & Cache)
+                  </td>
+                  <td><span class="badge badge-live">DUEL_IN_PROGRESS</span></td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="action-btn-sm" onclick="inspectRoom('duel-rm-8412')">Spectate</button>
+                      <button class="action-btn-sm action-btn-danger" onclick="forceEndDuel('duel-rm-8412')">Force End</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <div style="font-weight:600; color:#fff;">duel-rm-7729</div>
+                    <div style="font-size:11px; color:var(--text-faint); font-family:var(--font-mono);">WebRTC Mesh #3</div>
+                  </td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-weight:600; color:#fff;">Yonatan B.</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="color:#fff;">Cybersecurity & Network Defense</div>
+                    <div style="font-size:11px; color:var(--text-faint);">1v1 Ranked · ETB 2,500</div>
+                  </td>
+                  <td>
+                    <div style="font-family:var(--font-mono); color:var(--accent-amber);">1/2 In Lobby · 14 Viewers</div>
+                  </td>
+                  <td>
+                    <span style="color:var(--text-faint);">Waiting for Challenger</span>
+                  </td>
+                  <td><span class="badge badge-filling">LOBBY_WAITING</span></td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="action-btn-sm" onclick="inspectRoom('duel-rm-7729')">Spectate</button>
+                      <button class="action-btn-sm" onclick="sendBroadcastPrompt('duel-rm-7729')">Ping Host</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TOPIC BATTLES MANAGEMENT TABLE -->
+        <div class="panel" style="margin-top:24px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Topic Battles Registry (MongoDB: `topic_battles`)</div>
+              <div class="panel-subtitle">Syncs with frontend Management Table & Host Wizard</div>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <select class="form-select" id="battleStatusFilter" onchange="filterBattlesTable()" style="padding:6px 12px; font-size:12px;">
+                <option value="ALL">All Statuses</option>
+                <option value="filling">Filling</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Battle Name & ID</th>
+                  <th>Category</th>
+                  <th>Joiners / Max</th>
+                  <th>Prize (ETB)</th>
+                  <th>Time Limit</th>
+                  <th>Scheduled Launch</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="topicBattlesTableBody">
+                <tr data-status="filling">
+                  <td>
+                    <div style="font-weight:600; color:#fff;">Python AsyncIO & Event Loop Masters</div>
+                    <div style="font-size:11px; color:var(--text-faint); font-family:var(--font-mono);">battle-py-9021</div>
+                  </td>
+                  <td><span class="badge badge-judge">Backend Eng</span></td>
+                  <td><span style="font-family:var(--font-mono); color:#fff;">14</span> / 20</td>
+                  <td style="color:#34d399; font-weight:700;">ETB 10,000</td>
+                  <td>45 min</td>
+                  <td style="font-family:var(--font-mono); font-size:12px;">2026-10-14 18:00 EAT</td>
+                  <td><span class="badge badge-filling">filling</span></td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="action-btn-sm" onclick="editBattle('battle-py-9021')">Configure</button>
+                      <button class="action-btn-sm" onclick="forceLaunchBattle('battle-py-9021')">Launch Now</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr data-status="active">
+                  <td>
+                    <div style="font-weight:600; color:#fff;">Rust Memory Safety & Concurrency Sprint</div>
+                    <div style="font-size:11px; color:var(--text-faint); font-family:var(--font-mono);">battle-rs-3312</div>
+                  </td>
+                  <td><span class="badge badge-judge">Systems Eng</span></td>
+                  <td><span style="font-family:var(--font-mono); color:#fff;">32</span> / 32</td>
+                  <td style="color:#34d399; font-weight:700;">ETB 25,000</td>
+                  <td>60 min</td>
+                  <td style="font-family:var(--font-mono); font-size:12px;">In Progress (42m left)</td>
+                  <td><span class="badge badge-active">active</span></td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="action-btn-sm" onclick="viewSubmissions('battle-rs-3312')">Submissions</button>
+                      <button class="action-btn-sm action-btn-danger" onclick="cancelBattle('battle-rs-3312')">Cancel</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr data-status="completed">
+                  <td>
+                    <div style="font-weight:600; color:#fff;">FastAPI & Pydantic V2 Microservices</div>
+                    <div style="font-size:11px; color:var(--text-faint); font-family:var(--font-mono);">battle-fa-1184</div>
+                  </td>
+                  <td><span class="badge badge-judge">API Arch</span></td>
+                  <td><span style="font-family:var(--font-mono); color:#fff;">50</span> / 50</td>
+                  <td style="color:#34d399; font-weight:700;">ETB 15,000</td>
+                  <td>30 min</td>
+                  <td style="font-family:var(--font-mono); font-size:12px;">Completed 2h ago</td>
+                  <td><span class="badge badge-active" style="background:rgba(255,255,255,0.05); color:#94a3b8; border-color:var(--border-subtle);">completed</span></td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="action-btn-sm" onclick="viewLeaderboard('battle-fa-1184')">Leaderboard</button>
+                      <button class="action-btn-sm" onclick="exportResults('battle-fa-1184')">Export</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= TAB: SEASON CHAMPIONSHIP ================= -->
+      <section id="tab-championship" class="tab-content">
+        <div class="dashboard-header">
+          <div class="dashboard-title-group">
+            <h2>Season Championship & Ladder Control</h2>
+            <p>Admin control for the singleton Season progression, Stage 1–5 gates, point multiplier rollups, and reward disbursement.</p>
+          </div>
+          <div style="display:flex; gap:12px;">
+            <button class="btn-secondary" onclick="openChampionshipConfigModal()">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              Stage Rules & Cutoffs
+            </button>
+            <button class="btn-primary" onclick="triggerSeasonSnapshot()">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Finalize Season & Distribute Prizes
+            </button>
+          </div>
+        </div>
+
+        <div class="stats-grid" style="margin-top:24px;">
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-label">Active Championship</span>
+              <span class="badge badge-active">Season 4 — Autumn</span>
+            </div>
+            <div class="stat-value" style="font-size:26px; color:#fff;">Grand Algorithmic Clash</div>
+            <div class="stat-foot">
+              <span class="trend-neutral">Ends in: 14 days 6 hours</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-label">Enrolled Champions</span>
+              <span class="stat-icon" style="background:rgba(99,102,241,0.15); color:#818cf8;"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg></span>
+            </div>
+            <div class="stat-value">1,482</div>
+            <div class="stat-foot">
+              <span class="trend-up">↑ 182 this week</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-label">Season Grand Pool</span>
+              <span class="stat-icon" style="background:rgba(16,185,129,0.15); color:#10b981;"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2"/></svg></span>
+            </div>
+            <div class="stat-value">ETB 100,000</div>
+            <div class="stat-foot">
+              <span class="trend-up">Top 1: ETB 50,000</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STAGES PIPELINE -->
+        <div class="panel" style="margin-top:24px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Championship Progression Stages (1 to 5)</div>
+              <div class="panel-subtitle">Controls completion locks, pass thresholds, and auto-qualification</div>
+            </div>
+          </div>
+          <div style="padding:24px; display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px;">
+            <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:16px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="font-weight:700; color:#fff;">Stage 1: Qualifier</span>
+                <span class="badge badge-active">Unlocked</span>
+              </div>
+              <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Basic Code Challenges & MCQs. Required: 70%</div>
+              <div style="font-size:11px; font-family:var(--font-mono); color:var(--text-faint);">1,482 Qualified (100%)</div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:16px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="font-weight:700; color:#fff;">Stage 2: Speed Duel</span>
+                <span class="badge badge-active">Unlocked</span>
+              </div>
+              <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">3 Rapid 1v1 Matches against Bot or Peer.</div>
+              <div style="font-size:11px; font-family:var(--font-mono); color:var(--text-faint);">840 Qualified (56%)</div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:16px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="font-weight:700; color:#fff;">Stage 3: Deep Debug</span>
+                <span class="badge badge-active">Active</span>
+              </div>
+              <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Concurrency & Race condition fixing.</div>
+              <div style="font-size:11px; font-family:var(--font-mono); color:var(--text-faint);">312 In Flight</div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:16px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="font-weight:700; color:#fff;">Stage 4: Semifinals</span>
+                <span class="badge badge-filling">Starts Oct 20</span>
+              </div>
+              <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Top 32 Live Duel Bracket.</div>
+              <div style="font-size:11px; font-family:var(--font-mono); color:var(--text-faint);">Bracket Seed Ready</div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:16px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="font-weight:700; color:#fff;">Stage 5: Grand Finale</span>
+                <span class="badge badge-filling">Starts Oct 26</span>
+              </div>
+              <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Auditorium Live Stream & Final Showdown.</div>
+              <div style="font-size:11px; font-family:var(--font-mono); color:var(--text-faint);">Top 4 Contenders</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TOP LEADERBOARD TABLE -->
+        <div class="panel" style="margin-top:24px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Standings & Points Rollup (`competition_user_stats`)</div>
+              <div class="panel-subtitle">Automated tier calculation: Grandmaster, Master, Diamond, Gold</div>
+            </div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Competitor</th>
+                  <th>Championship Points</th>
+                  <th>Duels Won / Played</th>
+                  <th>Current Stage</th>
+                  <th>Prize Projection</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span style="font-family:var(--font-heading); font-size:18px; font-weight:800; color:#ffd700;">#1</span></td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <div style="width:32px; height:32px; border-radius:8px; background:linear-gradient(45deg,#ec4899,#8b5cf6); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; font-size:12px;">BK</div>
+                      <div>
+                        <div style="font-weight:600; color:#fff;">Bereket Kebede</div>
+                        <div style="font-size:11px; color:var(--text-faint);">Addis Ababa Institute of Tech</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="font-family:var(--font-mono); font-weight:700; color:var(--primary);">3,840 pts</td>
+                  <td style="font-family:var(--font-mono);">28 / 30 (93%)</td>
+                  <td><span class="badge badge-active">Stage 3 Cleared</span></td>
+                  <td style="color:#34d399; font-weight:700;">ETB 50,000</td>
+                  <td><button class="action-btn-sm" onclick="showPlayerProfile('bkebede')">Inspect Stats</button></td>
+                </tr>
+
+                <tr>
+                  <td><span style="font-family:var(--font-heading); font-size:18px; font-weight:800; color:#c0c0c0;">#2</span></td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <div style="width:32px; height:32px; border-radius:8px; background:linear-gradient(45deg,#3b82f6,#00f0ff); display:flex; align-items:center; justify-content:center; font-weight:700; color:#000; font-size:12px;">HA</div>
+                      <div>
+                        <div style="font-weight:600; color:#fff;">Hanna Assefa</div>
+                        <div style="font-size:11px; color:var(--text-faint);">HilCoE School of CS</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="font-family:var(--font-mono); font-weight:700; color:var(--primary);">3,620 pts</td>
+                  <td style="font-family:var(--font-mono);">26 / 29 (89%)</td>
+                  <td><span class="badge badge-active">Stage 3 Cleared</span></td>
+                  <td style="color:#34d399; font-weight:700;">ETB 25,000</td>
+                  <td><button class="action-btn-sm" onclick="showPlayerProfile('hassefa')">Inspect Stats</button></td>
+                </tr>
+
+                <tr>
+                  <td><span style="font-family:var(--font-heading); font-size:18px; font-weight:800; color:#cd7f32;">#3</span></td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <div style="width:32px; height:32px; border-radius:8px; background:linear-gradient(45deg,#10b981,#3b82f6); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; font-size:12px;">DM</div>
+                      <div>
+                        <div style="font-weight:600; color:#fff;">Dawit Mengistu</div>
+                        <div style="font-size:11px; color:var(--text-faint);">Hawassa University</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="font-family:var(--font-mono); font-weight:700; color:var(--primary);">3,310 pts</td>
+                  <td style="font-family:var(--font-mono);">24 / 28 (85%)</td>
+                  <td><span class="badge badge-active">Stage 3 In Progress</span></td>
+                  <td style="color:#34d399; font-weight:700;">ETB 15,000</td>
+                  <td><button class="action-btn-sm" onclick="showPlayerProfile('dmengistu')">Inspect Stats</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= TAB: ANTI-CHEAT & MODERATION ================= -->
+      <section id="tab-anticheat" class="tab-content">
+        <div class="dashboard-header">
+          <div class="dashboard-title-group">
+            <h2>Anti-Cheat & Plagiarism Guard</h2>
+            <p>Heuristics surveillance: Tab-switch telemetry, code copy-paste burst analysis, multiple accounts on single IP, and code similarity checks.</p>
+          </div>
+          <div style="display:flex; gap:12px;">
+            <button class="btn-secondary" onclick="runPlagiarismScanBatch()">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              Run Batch AST Diff Scan
+            </button>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:24px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">
+                <span class="badge badge-flagged" style="font-size:12px;">3 Flagged Cases Pending Review</span>
+              </div>
+              <div class="panel-subtitle">Immediate arbitration queue for disqualified or suspicious battle completions</div>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Incident ID</th>
+                  <th>Flagged User</th>
+                  <th>Battle / Duel Context</th>
+                  <th>Detection Reason</th>
+                  <th>Confidence</th>
+                  <th>Submission AST Match</th>
+                  <th>Decision</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span style="font-family:var(--font-mono); color:#fca5a5;">#AC-8819</span></td>
+                  <td>
+                    <div style="font-weight:600; color:#fff;">Kaleb Tesfaye</div>
+                    <div style="font-size:11px; color:var(--text-faint); font-family:var(--font-mono);">IP: 196.188.241.12</div>
+                  </td>
+                  <td>
+                    <div>Rust Concurrency Sprint</div>
+                    <div style="font-size:11px; color:var(--text-faint);">battle-rs-3312</div>
+                  </td>
+                  <td>
+                    <span style="color:#f87171; font-weight:600;">Pasted 420 chars in 80ms</span><br>
+                    <span style="font-size:11px; color:var(--text-faint);">Focus lost 6 times during 3-min solve</span>
+                  </td>
+                  <td><span class="badge badge-flagged">94% Suspicious</span></td>
+                  <td>
+                    <button class="action-btn-sm" onclick="showAstCodeDiff('case-8819')">View Code Diff (98% match)</button>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="action-btn-sm action-btn-danger" onclick="sanctionUser('Kaleb Tesfaye', 'DISQUALIFY_BATTLE')">Disqualify</button>
+                      <button class="action-btn-sm" onclick="dismissFlag('#AC-8819')">False Positive</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><span style="font-family:var(--font-mono); color:#fca5a5;">#AC-8814</span></td>
+                  <td>
+                    <div style="font-weight:600; color:#fff;">Anonymous_7719</div>
+                    <div style="font-size:11px; color:var(--text-faint); font-family:var(--font-mono);">IP: 197.156.70.88</div>
+                  </td>
+                  <td>
+                    <div>FastAPI Microservices</div>
+                    <div style="font-size:11px; color:var(--text-faint);">battle-fa-1184</div>
+                  </td>
+                  <td>
+                    <span style="color:#f87171; font-weight:600;">Double Session Same IP</span><br>
+                    <span style="font-size:11px; color:var(--text-faint);">Two duelists joined from identical browser fingerprint</span>
+                  </td>
+                  <td><span class="badge badge-flagged">88% Sybil Attack</span></td>
+                  <td>
+                    <span style="font-size:12px; color:var(--text-faint);">Collision in LiveDuel mesh</span>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="action-btn-sm action-btn-danger" onclick="sanctionUser('Anonymous_7719', 'BAN_IP')">Ban IP Subnet</button>
+                      <button class="action-btn-sm" onclick="dismissFlag('#AC-8814')">Dismiss</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><span style="font-family:var(--font-mono); color:#fca5a5;">#AC-8802</span></td>
+                  <td>
+                    <div style="font-weight:600; color:#fff;">Natnael Girma</div>
+                    <div style="font-size:11px; color:var(--text-faint); font-family:var(--font-mono);">IP: 102.218.44.19</div>
+                  </td>
+                  <td>
+                    <div>Algorithms & Data Structures</div>
+                    <div style="font-size:11px; color:var(--text-faint);">duel-rm-9081</div>
+                  </td>
+                  <td>
+                    <span style="color:#fbbf24; font-weight:600;">Impossible Solve Time</span><br>
+                    <span style="font-size:11px; color:var(--text-faint);">Hard DP question answered in 3.4 seconds</span>
+                  </td>
+                  <td><span class="badge badge-filling">72% Automated Bot</span></td>
+                  <td>
+                    <button class="action-btn-sm" onclick="showAstCodeDiff('case-8802')">View Keystroke Log</button>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="action-btn-sm action-btn-danger" onclick="sanctionUser('Natnael Girma', 'FREEZE_WALLET')">Freeze Wallet</button>
+                      <button class="action-btn-sm" onclick="dismissFlag('#AC-8802')">Dismiss</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= TAB: SUBJECTIVE GRADING QUEUE ================= -->
+      <section id="tab-grading" class="tab-content">
+        <div class="dashboard-header">
+          <div class="dashboard-title-group">
+            <h2>Subjective Grading & Human-in-the-Loop Review</h2>
+            <p>Review open-ended coding questions, system architecture diagrams, and written essays submitted in Live Duels and Topic Battles.</p>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:24px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Pending Submissions Awaiting Human Referee Grade</div>
+              <div class="panel-subtitle">Answers categorized as: `coding_subjective`, `architecture_design`, `markdown_essay`</div>
+            </div>
+            <span class="badge badge-judge">6 Pending Review</span>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Submission ID</th>
+                  <th>Student</th>
+                  <th>Competition Title</th>
+                  <th>Question Prompt</th>
+                  <th>Answer Type</th>
+                  <th>Submitted At</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span style="font-family:var(--font-mono); color:#fff;">sub-sub-4410</span></td>
+                  <td>
+                    <div style="font-weight:600; color:#fff;">Lydia Tefera</div>
+                    <div style="font-size:11px; color:var(--text-faint);">lydia@delta-labs.edu</div>
+                  </td>
+                  <td>Live Duel: Cloud Systems #9081</td>
+                  <td>
+                    <div style="max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff;">
+                      Design a low-latency WebRTC signaling server with Redis failover
+                    </div>
+                  </td>
+                  <td><span class="badge" style="background:rgba(168,85,247,0.15); color:#c084fc;">architecture_design</span></td>
+                  <td style="font-family:var(--font-mono); font-size:12px;">12 mins ago</td>
+                  <td>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:12px;" onclick="openGradeModal('sub-sub-4410', 'Lydia Tefera', 'WebRTC Architecture')">Grade Now</button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><span style="font-family:var(--font-mono); color:#fff;">sub-sub-4408</span></td>
+                  <td>
+                    <div style="font-weight:600; color:#fff;">Elias Alemayehu</div>
+                    <div style="font-size:11px; color:var(--text-faint);">elias.a@gmail.com</div>
+                  </td>
+                  <td>Championship Stage 3</td>
+                  <td>
+                    <div style="max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff;">
+                      Explain how the Python GIL interacts with true thread parallelism in 3.13 free-threaded builds
+                    </div>
+                  </td>
+                  <td><span class="badge" style="background:rgba(59,130,246,0.15); color:#93c5fd;">markdown_essay</span></td>
+                  <td style="font-family:var(--font-mono); font-size:12px;">28 mins ago</td>
+                  <td>
+                    <button class="btn-primary" style="padding:6px 14px; font-size:12px;" onclick="openGradeModal('sub-sub-4408', 'Elias Alemayehu', 'Python GIL Analysis')">Grade Now</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= TAB: COURSES, REELS & Q&A ================= -->
+      <section id="tab-courses" class="tab-content">
+        <div class="dashboard-header">
+          <div class="dashboard-title-group">
+            <h2>Course Ecosystem, Reel Highlights & Q&A</h2>
+            <p>Manage learning catalog, review reported Q&A items, verify reels and video highlights, and oversee course ratings.</p>
+          </div>
+        </div>
+
+        <div class="stats-grid" style="margin-top:24px;">
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-label">Published Courses</span>
+              <span class="stat-icon" style="background:rgba(59,130,246,0.15); color:#60a5fa;"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></span>
+            </div>
+            <div class="stat-value">48</div>
+            <div class="stat-foot">
+              <span class="trend-up">12,400 Students Enrolled</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-label">Reels & Video Highlights</span>
+              <span class="stat-icon" style="background:rgba(236,72,153,0.15); color:#f472b6;"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></span>
+            </div>
+            <div class="stat-value">184</div>
+            <div class="stat-foot">
+              <span class="trend-up">4 Pending Approval</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-label">Live Community Questions</span>
+              <span class="stat-icon" style="background:rgba(245,158,11,0.15); color:#fbbf24;"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+            </div>
+            <div class="stat-value">620</div>
+            <div class="stat-foot">
+              <span class="trend-up">94% Answered</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- REELS APPROVAL LIST -->
+        <div class="panel" style="margin-top:24px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Duel Reels & Video Highlights Feed Moderation</div>
+              <div class="panel-subtitle">Short-form battle recordings uploaded for community review</div>
+            </div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Reel ID</th>
+                  <th>Creator / Competitor</th>
+                  <th>Duel Match Context</th>
+                  <th>Duration</th>
+                  <th>CDN Status</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span style="font-family:var(--font-mono); color:#fff;">reel-vid-109</span></td>
+                  <td>
+                    <div style="font-weight:600; color:#fff;">Tewodros Kassahun</div>
+                    <div style="font-size:11px; color:var(--text-faint);">@tedros_dev</div>
+                  </td>
+                  <td>Clutch 1v1 Solve in Last 5 Seconds vs AI</td>
+                  <td>00:45</td>
+                  <td><span class="badge" style="background:rgba(16,185,129,0.1); color:#34d399;">Cloudflare CDN Ready</span></td>
+                  <td><span class="badge badge-active">Published</span></td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="action-btn-sm" onclick="previewReel('reel-vid-109')">Preview</button>
+                      <button class="action-btn-sm action-btn-danger" onclick="delistReel('reel-vid-109')">Delist</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><span style="font-family:var(--font-mono); color:#fff;">reel-vid-112</span></td>
+                  <td>
+                    <div style="font-weight:600; color:#fff;">Abel Solomon</div>
+                    <div style="font-size:11px; color:var(--text-faint);">@abel_cloud</div>
+                  </td>
+                  <td>Live Duel Audio Highlight: Explaining Race Conditions</td>
+                  <td>01:14</td>
+                  <td><span class="badge badge-filling">Transcoding 1080p</span></td>
+                  <td><span class="badge badge-filling">Pending Approval</span></td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="action-btn-sm" onclick="previewReel('reel-vid-112')">Review</button>
+                      <button class="action-btn-sm" style="color:#10b981;" onclick="approveReel('reel-vid-112')">Approve</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= TAB: WALLETS & PAYOUTS ================= -->
+      <section id="tab-wallets" class="tab-content">
+        <div class="dashboard-header">
+          <div class="dashboard-title-group">
+            <h2>Financial Settlement & ETB Prize Disbursement</h2>
+            <p>Reconcile platform earnings, authorize user Telebirr / CBE payouts, review transaction audit logs.</p>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:24px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Pending Payout Requests (Telebirr / Commercial Bank of Ethiopia)</div>
+              <div class="panel-subtitle">Dual-signature ledger reconciliation before disbursement</div>
+            </div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Recipient Name</th>
+                  <th>Payout Provider</th>
+                  <th>Account Number / Phone</th>
+                  <th>Prize Source</th>
+                  <th>Amount</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span style="font-family:var(--font-mono); color:#fff;">pay-etb-7701</span></td>
+                  <td>
+                    <div style="font-weight:600; color:#fff;">Bereket Kebede</div>
+                    <div style="font-size:11px; color:var(--text-faint);">User ID: usr-99018</div>
+                  </td>
+                  <td><span class="badge" style="background:rgba(0,240,255,0.1); color:var(--primary);">Telebirr</span></td>
+                  <td style="font-family:var(--font-mono); font-weight:600;">+251 91 123 4567</td>
+                  <td>Topic Battle #battle-rs-3312 (1st Place)</td>
+                  <td style="color:#34d399; font-weight:800; font-size:15px;">ETB 15,000</td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn-primary" style="padding:6px 14px; font-size:12px;" onclick="approvePayout('pay-etb-7701', 'Bereket Kebede', '15,000')">Authorize Payout</button>
+                      <button class="action-btn-sm action-btn-danger" onclick="rejectPayout('pay-etb-7701')">Reject</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><span style="font-family:var(--font-mono); color:#fff;">pay-etb-7702</span></td>
+                  <td>
+                    <div style="font-weight:600; color:#fff;">Hanna Assefa</div>
+                    <div style="font-size:11px; color:var(--text-faint);">User ID: usr-88412</div>
+                  </td>
+                  <td><span class="badge" style="background:rgba(99,102,241,0.1); color:#818cf8;">CBE Birr</span></td>
+                  <td style="font-family:var(--font-mono); font-weight:600;">1000281948192</td>
+                  <td>Live Duel Arena Host Royalty</td>
+                  <td style="color:#34d399; font-weight:800; font-size:15px;">ETB 5,200</td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn-primary" style="padding:6px 14px; font-size:12px;" onclick="approvePayout('pay-etb-7702', 'Hanna Assefa', '5,200')">Authorize Payout</button>
+                      <button class="action-btn-sm action-btn-danger" onclick="rejectPayout('pay-etb-7702')">Reject</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= TAB: JUDGE0 & EXECUTION ================= -->
+      <section id="tab-judge0" class="tab-content">
+        <div class="dashboard-header">
+          <div class="dashboard-title-group">
+            <h2>Judge0 Cluster & Execution Sandbox</h2>
+            <p>Grading engine configuration across 11 programming languages, rate limits, timeout policies, and sandbox egress controls.</p>
+          </div>
+          <div style="display:flex; gap:12px;">
+            <button class="btn-primary" onclick="testJudge0Connection()">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              Run Canary Execution
+            </button>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:24px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Active Judge0 Execution Cluster Configuration</div>
+              <div class="panel-subtitle">Replaces public hardcoded `https://ce.judge0.com` with isolated self-hosted cluster</div>
+            </div>
+            <span class="badge badge-active">Cluster Status: Healthy</span>
+          </div>
+
+          <div style="padding:24px; display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
+            <div class="form-group">
+              <label class="form-label">Cluster Endpoint URL</label>
+              <input type="text" class="form-input" value="https://judge0-cluster.internal.delta-labs.org" id="judge0UrlInput">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Cluster Auth Token / API Key</label>
+              <input type="password" class="form-input" value="dl_sec_judge0_8849204910284" id="judge0KeyInput">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Max CPU Time Limit (seconds)</label>
+              <input type="number" class="form-input" value="3.5" id="judge0Timeout">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Memory Limit (MB)</label>
+              <input type="number" class="form-input" value="256" id="judge0Memory">
+            </div>
+          </div>
+
+          <div style="padding:0 24px 24px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:12px; color:var(--text-faint);">
+              Languages supported: Python 3.12, Rust 1.78, TypeScript 5.4, Go 1.22, C++ 20, Java 21, Kotlin 1.9, C# (.NET 8)
+            </div>
+            <button class="btn-secondary" onclick="saveJudge0Config()">Save Sandbox Settings</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+
+  <!-- ================= MODAL DIALOGS ================= -->
+  <div class="modal-backdrop" id="genericModal">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <h3 id="modalTitle">Modal Title</h3>
+        <button class="icon-btn" onclick="closeModal()" style="border:none; background:transparent;">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Injected via JavaScript -->
+      </div>
+      <div class="modal-foot" id="modalFoot">
+        <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" id="modalConfirmBtn">Confirm Action</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOASTS -->
+  <div class="toast-container" id="toastContainer"></div>
+
+
+  <!-- ================= SCRIPT & INTERACTIVITY ================= -->
+  <script>
+    // --- TABS ROUTING ---
+    const navItems = document.querySelectorAll('.nav-item');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const targetTab = item.getAttribute('data-tab');
+        if (!targetTab) return;
+
+        navItems.forEach(i => i.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+
+        item.classList.add('active');
+        const activeContent = document.getElementById(targetTab);
+        if (activeContent) activeContent.classList.add('active');
+
+        if (targetTab === 'tab-overview') {
+          setTimeout(drawChart, 50);
+        }
+      });
+    });
+
+    // --- REALTIME EVENT FEED SIMULATION ---
+    const realtimeFeed = document.getElementById('realtimeFeedContainer');
+    let feedPaused = false;
+
+    const sampleEvents = [
+      { type: 'duel', title: 'Live Duel Match Started', meta: 'duel-rm-9081 · Bereket K. vs Hanna A. (Algorithms)', color: '#00f0ff' },
+      { type: 'judge', title: 'Judge0 Code Evaluated', meta: 'Python 3.12 Solution · 0.14s CPU · 10/10 Test Cases Passed', color: '#10b981' },
+      { type: 'join', title: 'Competitor Joined Topic Battle', meta: 'battle-py-9021 · Yared M. claimed seat 15/20', color: '#6366f1' },
+      { type: 'webrtc', title: 'WebRTC Mesh Signal Established', meta: 'Peer connection ICE completed · 38 viewers watching', color: '#a855f7' },
+      { type: 'anticheat', title: 'Anti-Cheat Heuristic Alert', meta: 'Unusual paste rate detected on battle-rs-3312 · Flagged for review', color: '#f43f5e' },
+      { type: 'payout', title: 'Prize Payout Requested', meta: 'ETB 15,000 claimed via Telebirr by User usr-99018', color: '#fbbf24' }
+    ];
+
+    function createFeedItem(evt) {
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0];
+      const el = document.createElement('div');
+      el.className = 'feed-item';
+      el.innerHTML = `
+        <div class="feed-indicator" style="background:${evt.color}; box-shadow:0 0 8px ${evt.color};"></div>
+        <div class="feed-content">
+          <div class="feed-title">
+            <span>${evt.title}</span>
+            <span class="feed-time">${timeStr}</span>
+          </div>
+          <div class="feed-meta">${evt.meta}</div>
+        </div>
+      `;
+      return el;
+    }
+
+    // Seed initial events
+    sampleEvents.forEach(e => realtimeFeed.appendChild(createFeedItem(e)));
+
+    // Continuous ticker
+    setInterval(() => {
+      if (feedPaused) return;
+      const randomEvent = sampleEvents[Math.floor(Math.random() * sampleEvents.length)];
+      const item = createFeedItem(randomEvent);
+      realtimeFeed.insertBefore(item, realtimeFeed.firstChild);
+
+      if (realtimeFeed.children.length > 20) {
+        realtimeFeed.removeChild(realtimeFeed.lastChild);
+      }
+    }, 4500);
+
+    function toggleFeedStream() {
+      feedPaused = !feedPaused;
+      const btn = document.getElementById('pauseFeedBtn');
+      btn.textContent = feedPaused ? 'Resume' : 'Pause';
+      showToast(feedPaused ? 'Event stream paused' : 'Event stream resumed');
+    }
+
+    function clearFeedLog() {
+      realtimeFeed.innerHTML = '';
+      showToast('Telemetry stream cleared');
+    }
+
+    // --- TOAST NOTIFICATIONS ---
+    function showToast(msg, isSuccess = true) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `
+        <span style="color:${isSuccess ? 'var(--primary)' : '#f43f5e'}; font-size:16px;">${isSuccess ? '✓' : '⚠'}</span>
+        <span>${msg}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        toast.style.transition = 'all 0.3s';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // --- MODAL CONTROLS ---
+    const genericModal = document.getElementById('genericModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+
+    function openModal(title, bodyHtml, confirmText, onConfirm) {
+      modalTitle.textContent = title;
+      modalBody.innerHTML = bodyHtml;
+      modalConfirmBtn.textContent = confirmText || 'Confirm';
+      modalConfirmBtn.onclick = () => {
+        if (onConfirm) onConfirm();
+        closeModal();
+      };
+      genericModal.classList.add('open');
+    }
+
+    function closeModal() {
+      genericModal.classList.remove('open');
+    }
+
+    // Close on backdrop click
+    genericModal.addEventListener('click', (e) => {
+      if (e.target === genericModal) closeModal();
+    });
+
+    // --- ACTIONS ---
+    function inspectRoom(roomId) {
+      openModal(
+        `Spectating Room: ${roomId}`,
+        `
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="padding:14px; background:#000; border-radius:12px; border:1px solid var(--border-subtle);">
+            <div style="font-weight:700; color:var(--primary); margin-bottom:4px;">WebRTC Mesh Signaling State</div>
+            <div style="font-size:12px; color:var(--text-faint); font-family:var(--font-mono);">
+              Peers Connected: 2/2 Active<br>
+              Signaling Latency: 18ms (Stun / Turn Google Fallback)<br>
+              Audio Packets: 0% loss · RMS Voice: -18 dBFS<br>
+              Redis Channel: live_duel:${roomId}
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Broadcast Referee Notice into Room Chat</label>
+            <input type="text" class="form-input" placeholder="e.g., 'Referee Warning: Code formatting time starts now'" id="refNotice">
+          </div>
+        </div>
+        `,
+        'Send Notice',
+        () => {
+          showToast(`Notice sent to live participants in ${roomId}`);
+        }
+      );
+    }
+
+    function forceEndDuel(roomId) {
+      openModal(
+        `Force Terminate: ${roomId}`,
+        `<p style="color:var(--text-muted); font-size:14px;">Are you sure you want to forcibly conclude <strong>${roomId}</strong>? This will send a <code>DUEL_ENDED</code> event to all WebSocket clients and close active WebRTC channels.</p>`,
+        'Terminate Room',
+        () => {
+          showToast(`Room ${roomId} forcibly terminated`, false);
+        }
+      );
+    }
+
+    function sendBroadcastPrompt(roomId) {
+      showToast(`Ping dispatched to host of ${roomId}`);
+    }
+
+    function forceLaunchBattle(battleId) {
+      showToast(`Battle ${battleId} manually triggered for launch!`);
+    }
+
+    function cancelBattle(battleId) {
+      openModal(
+        `Cancel Topic Battle: ${battleId}`,
+        `<p style="color:var(--text-muted);">This will cancel the battle, refund any entry fees, and notify all registered joiners.</p>`,
+        'Confirm Cancel',
+        () => {
+          showToast(`Battle ${battleId} has been cancelled`, false);
+        }
+      );
+    }
+
+    function viewSubmissions(battleId) {
+      showToast(`Loaded submissions ledger for ${battleId}`);
+    }
+
+    function sanctionUser(userName, actionType) {
+      showToast(`Action '${actionType}' enforced on ${userName}`, false);
+    }
+
+    function dismissFlag(incidentId) {
+      showToast(`Flag ${incidentId} dismissed as false positive`);
+    }
+
+    function openGradeModal(subId, student, title) {
+      openModal(
+        `Grade Submission: ${subId}`,
+        `
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div><strong>Student:</strong> ${student}</div>
+          <div><strong>Task:</strong> ${title}</div>
+          <div class="code-preview">
+// Candidate Submitted Solution Architecture
+class SignalingMesh {
+  constructor(roomId, redisClient) {
+    this.roomId = roomId;
+    this.pubsub = redisClient.duplicate();
+  }
+  async broadcastState(event, payload) {
+    await this.pubsub.publish("live_duel:" + this.roomId, JSON.stringify({ event, payload }));
+  }
+}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Score (0 - 100)</label>
+            <input type="number" class="form-input" value="95" id="gradeScore">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Referee Feedback</label>
+            <textarea class="form-textarea" placeholder="Great asynchronous architecture and proper error boundaries..."></textarea>
+          </div>
+        </div>
+        `,
+        'Submit Grade',
+        () => {
+          showToast(`Grade submitted for ${student}: 95/100`);
+        }
+      );
+    }
+
+    function approvePayout(payId, user, amount) {
+      openModal(
+        `Approve Payout: ${payId}`,
+        `<p style="color:var(--text-muted);">Authorize automated disbursement of <strong>ETB ${amount}</strong> to <strong>${user}</strong> via mobile payment gateway?</p>`,
+        'Authorize Release',
+        () => {
+          showToast(`Disbursed ETB ${amount} to ${user} successfully!`);
+        }
+      );
+    }
+
+    function rejectPayout(payId) {
+      showToast(`Payout request ${payId} rejected and refunded to wallet`, false);
+    }
+
+    function refreshLiveData() {
+      showToast('Synchronized with Render API backend and Redis channels');
+    }
+
+    function openCreateBattleModal() {
+      openModal(
+        'Host New Topic Battle',
+        `
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div class="form-group">
+            <label class="form-label">Battle Title</label>
+            <input type="text" class="form-input" placeholder="e.g., Golang Goroutines & Channels Duel">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-select">
+              <option>Backend Systems</option>
+              <option>Frontend & UI</option>
+              <option>Algorithms & Data Structures</option>
+              <option>Cybersecurity</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prize ETB Pool</label>
+            <input type="number" class="form-input" value="10000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Player Capacity</label>
+            <input type="number" class="form-input" value="20">
+          </div>
+        </div>
+        `,
+        'Publish Battle',
+        () => showToast('New Topic Battle published to lobby')
+      );
+    }
+
+    function openCreateLiveDuelModal() {
+      openModal(
+        'Spin Up 1v1 Live Duel Arena',
+        `
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div class="form-group">
+            <label class="form-label">Arena Title</label>
+            <input type="text" class="form-input" placeholder="e.g., Live Code Clash: React 19 vs Svelte 5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Question Pack</label>
+            <select class="form-select">
+              <option>Pack #14: Frontend React Architecture (10 Questions)</option>
+              <option>Pack #08: Python Algorithms (8 Questions)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Video Mesh Enabled</label>
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        `,
+        'Create Arena Room',
+        () => showToast('Arena room provisioned. Live WebSocket channel open.')
+      );
+    }
+
+    function showAstCodeDiff(caseId) {
+      openModal(
+        `AST Code Plagiarism Diff: ${caseId}`,
+        `
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="font-size:12px; color:var(--text-faint);">Similarity Score: 98.4% (Structure and Variable Graph Match)</div>
+          <div class="code-preview" style="color:#ef4444;">
+- // Candidate Kaleb's Submitted Code
+- fn solve_graph(edges: &Vec<(u32, u32)>) -> HashMap<u32, Vec<u32>> {
+-     let mut adj = HashMap::new();
+-     for &(u, v) in edges { adj.entry(u).or_default().push(v); }
+-     adj
+- }
+          </div>
+          <div class="code-preview" style="color:#10b981;">
++ // Matched Public Repository Source
++ fn solve_graph(edges: &Vec<(u32, u32)>) -> HashMap<u32, Vec<u32>> {
++     let mut adj = HashMap::new();
++     for &(u, v) in edges { adj.entry(u).or_default().push(v); }
++     adj
++ }
+          </div>
+        </div>
+        `,
+        'Close Review',
+        null
+      );
+    }
+
+    function testJudge0Connection() {
+      showToast('Executing canary test on Judge0 cluster...');
+      setTimeout(() => {
+        showToast('Canary passed in 210ms (Python 3.12, status: Accepted)');
+      }, 1200);
+    }
+
+    function saveJudge0Config() {
+      showToast('Judge0 cluster endpoint & security settings saved');
+    }
+
+    // --- CANVAS TELEMETRY CHART ---
+    function drawChart() {
+      const canvas = document.getElementById('overviewChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      const width = rect.width;
+      const height = rect.height;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Grid lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let y = 20; y < height - 20; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      // Sample Data (24 hours)
+      const pointsA = [12, 18, 14, 22, 35, 48, 62, 75, 90, 84, 70, 85, 95, 110, 124, 115, 98, 88, 72, 60, 45, 30, 22, 18];
+      const pointsB = [25, 30, 28, 45, 70, 88, 120, 140, 160, 150, 130, 145, 175, 190, 210, 180, 160, 140, 110, 95, 80, 55, 40, 32];
+
+      const maxVal = 240;
+      const step = width / (pointsA.length - 1);
+
+      // Draw Dataset B (Judge0)
+      ctx.strokeStyle = '#a855f7';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      pointsB.forEach((p, i) => {
+        const x = i * step;
+        const y = height - 20 - (p / maxVal) * (height - 40);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // Draw Dataset A (Live Duels)
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      pointsA.forEach((p, i) => {
+        const x = i * step;
+        const y = height - 20 - (p / maxVal) * (height - 40);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // Gradient under Dataset A
+      ctx.lineTo((pointsA.length - 1) * step, height);
+      ctx.lineTo(0, height);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
+      grad.addColorStop(0, 'rgba(0, 240, 255, 0.18)');
+      grad.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    window.addEventListener('resize', drawChart);
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(drawChart, 100);
+    });
+
+    // Global search filter
+    document.getElementById('globalSearchInput').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      document.querySelectorAll('tbody tr').forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(q) ? '' : 'none';
+      });
+    });
+
+    function filterBattlesTable() {
+      const status = document.getElementById('battleStatusFilter').value;
+      document.querySelectorAll('#topicBattlesTableBody tr').forEach(row => {
+        if (status === 'ALL' || row.getAttribute('data-status') === status) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

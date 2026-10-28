@@ -20,8 +20,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Radio } from "lucide-react";
 
-import { LiveDuelsListTemplate } from "@/components/templates/LiveDuelsListTemplate/LiveDuelsListTemplate";
-import { JoinLiveDuelModal } from "@/components/organisms/JoinLiveDuelModal/JoinLiveDuelModal";
+import { LiveDuelsListTemplate } from "@/components/templates/LiveDuelsListTemplate";
+import { JoinLiveDuelModal } from "@/components/organisms/JoinLiveDuelModal";
 import { LiveDuelGrid } from "@/components/organisms/LiveDuelGrid/LiveDuelGrid";
 import { Typography } from "@/components/theme/Typography";
 import type { SearchPillOption } from "@/components/molecules/SearchPill/SearchPill";
@@ -66,7 +66,8 @@ export function LiveDuelsPage() {
 
   // Merge the backend catalog into the local registry (deduped by id) so any
   // room a user navigates to resolves — even ones hosted by other sessions.
-  useEffect(() => {
+  // Re-run after a join so the server's persisted hasJoined flips the card.
+  const refreshList = useCallback(() => {
     let active = true;
     fetchLiveDuels()
       .then((list) => {
@@ -82,11 +83,21 @@ export function LiveDuelsPage() {
     };
   }, []);
 
+  useEffect(() => refreshList(), [refreshList]);
+
   const catalog = useMemo(() => {
     void remoteVersion;
     return getLiveDuelsCatalog();
   }, [remoteVersion]);
   const joinModal = useJoinLiveDuelModal();
+
+  // Re-merge the backend catalog once a join succeeds so the server's persisted
+  // hasJoined flips that duel's card from "Join Duel" to "Enter Duel".
+  useEffect(() => {
+    if (joinModal.isSuccess) {
+      refreshList();
+    }
+  }, [joinModal.isSuccess, refreshList]);
 
   const subjects = useMemo<SubjectPill[]>(() => {
     const counts = new Map<string, number>();

@@ -17,6 +17,7 @@ import { useAuthSession } from "@/contexts/AuthSession_Context";
 import { useFeatureTabs } from "@/contexts/FeatureTabs_Context";
 import { useWorkspaceTabHref } from "@/modules/Features/hooks/useWorkspaceTabHref";
 import { useWorkspaceTabNavigation } from "@/modules/Features/hooks/useWorkspaceTabNavigation";
+import { useRouter } from "next/navigation";
 import { setSchoolArchived } from "@/modules/School/api";
 import { schoolQueryKeys } from "@/modules/School/hooks/schoolQueryKeys";
 import { useSchoolActiveOrgId } from "@/modules/School/hooks/useSchoolActiveOrgId";
@@ -25,6 +26,7 @@ import { useSchoolActiveOrgId } from "@/modules/School/hooks/useSchoolActiveOrgI
 /** ################################ COMPONENT ############################# */
 /** My School — overview, stats, search, and school cards (membership-based list). */
 export function SchoolHomeView() {
+  const router = useRouter();
   const { push } = useWorkspaceTabNavigation();
   const { openWorkspaceTabAt } = useFeatureTabs();
   const addSchoolHref = useWorkspaceTabHref("/features/school/create");

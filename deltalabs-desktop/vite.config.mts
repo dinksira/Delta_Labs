@@ -13,12 +13,15 @@ export default defineConfig({
     tailwindcss()
   ],
   define: {
+    // Blanket fallback FIRST so specific keys below always win
+    'process.env': '{}',
+    'process.env.NODE_ENV': JSON.stringify('production'),
     'process.env.NEXT_PUBLIC_API_BASE_URL': JSON.stringify('https://delta-labs.onrender.com'),
     'process.env.NEXT_PUBLIC_FEED_DEBUG_WORKER_HEALTH': JSON.stringify('false'),
-    'process.env.NEXT_PUBLIC_FEED_DEBUG_USE_LOCAL_VIDEOS_WHEN_EMPTY': JSON.stringify('false'),
+    // Show built-in mock videos when the backend returns 0 items (e.g. cold start on Render free tier)
+    'process.env.NEXT_PUBLIC_FEED_DEBUG_USE_LOCAL_VIDEOS_WHEN_EMPTY': JSON.stringify('true'),
     'process.env.NEXT_PUBLIC_FEED_DEBUG_LOADING_MS': JSON.stringify(''),
-    'process.env.NODE_ENV': JSON.stringify('development'),
-    'process.env': '{}',
+
   },
   base: './', // Enforce relative asset paths for Electron loading
   resolve: {
