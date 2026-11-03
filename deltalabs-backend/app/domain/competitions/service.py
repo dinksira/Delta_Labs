@@ -1051,9 +1051,9 @@ _DEMO_CHAMPIONSHIP_SEASON: dict[str, object] = {
     "starts_at": "2026-09-01T00:00:00Z",
     "ends_at": "2026-11-30T23:59:59Z",
     "total_stages": 5,
-    "completed_stages": 2,
-    "current_stage_order": 3,
-    "points_earned": 500,
+    "completed_stages": 0,
+    "current_stage_order": 1,
+    "points_earned": 0,
     "total_points": 1000,
     "player_rank": 0,
     "total_players": 0,
@@ -1065,10 +1065,11 @@ _DEMO_CHAMPIONSHIP_STAGES: list[dict[str, object]] = [
         "order": 1,
         "name": "Qualifier Round",
         "short_label": "R1",
-        "status": "completed",
+        "status": "unlocked",
         "starts_at": "2026-09-01T00:00:00Z",
         "points_to_earn": 200,
-        "points_earned": 200,
+        "points_earned": 0,
+        "is_current": True,
         "battle_id": "tb_demo_math_olympiad",
         "entry_fee": "Free",
         "prize_pool": "ETB 12",
@@ -1079,10 +1080,10 @@ _DEMO_CHAMPIONSHIP_STAGES: list[dict[str, object]] = [
         "order": 2,
         "name": "Round of 32",
         "short_label": "R32",
-        "status": "completed",
+        "status": "locked",
         "starts_at": "2026-09-15T00:00:00Z",
         "points_to_earn": 300,
-        "points_earned": 300,
+        "points_earned": 0,
         "battle_id": "tb_demo_ml_club",
         "entry_fee": "Free",
         "prize_pool": "ETB 25",
@@ -1093,11 +1094,10 @@ _DEMO_CHAMPIONSHIP_STAGES: list[dict[str, object]] = [
         "order": 3,
         "name": "Round of 16",
         "short_label": "R16",
-        "status": "unlocked",
+        "status": "locked",
         "starts_at": "2026-09-28T00:00:00Z",
         "points_to_earn": 200,
         "points_earned": 0,
-        "is_current": True,
         "battle_id": "tb_demo_bio_cells",
         "entry_fee": "Free",
         "prize_pool": "ETB 50",
@@ -1913,6 +1913,12 @@ class Service:
         # are no completions, so this reads empty rather than inventing rows.
         db_standings = await self._repository.championship_standings()
 
+        has_joined = False
+        if stats:
+            has_joined = bool(stats.get("championship_joined")) or bool(completed)
+        if stored is not None and user_id and user_id in stored.get("participants", []):
+            has_joined = True
+
         ordered = sorted(stages_source, key=lambda s: int(s["order"]))
         next_unlocked = next(
             (int(s["order"]) for s in ordered if int(s["order"]) not in completed_set),
@@ -1921,9 +1927,6 @@ class Service:
 
         stages: list[ChampionshipStageResponse] = []
         for stage in ordered:
-            if not has_progress:
-                stages.append(ChampionshipStageResponse.model_validate(stage))
-                continue
             order = int(stage["order"])
             is_done = order in completed_set
             candidate = dict(stage)
@@ -1938,19 +1941,28 @@ class Service:
             )
             stages.append(ChampionshipStageResponse.model_validate(candidate))
 
-        season_data = dict(season)
-        if has_progress:
-            season_data["completed_stages"] = len(completed)
-            season_data["current_stage_order"] = next_unlocked
-            season_data["points_earned"] = player_points
-        # The season's rank badge is computed live from the real ladder, so a
-        # demo or freshly created season can never claim a place it has not
-        # earned ("Rank #4 of 128" with nobody on the board).
+        is_completed = len(completed) >= len(ordered) and len(ordered) > 0
         player_rank, total_players = await self._repository.championship_rank_and_total(
-            player_points
+            player_points, user_id=user_id if has_joined else None
         )
+        is_winner = is_completed and player_rank == 1
+
+        season_data = dict(season)
+        season_data["completed_stages"] = len(completed)
+        season_data["current_stage_order"] = next_unlocked
+        season_data["points_earned"] = player_points
         season_data["player_rank"] = player_rank
         season_data["total_players"] = total_players
+        season_data["has_joined"] = has_joined
+        season_data["is_winner"] = is_winner
+        season_data["is_completed"] = is_completed
+        if is_completed:
+            season_data["status"] = "completed"
+
+        next_season_data = dict(next_season)
+        if is_completed:
+            next_season_data["is_unlocked"] = True
+            next_season_data["unlock_hint"] = "Congratulations! You completed the season and unlocked the next season."
 
         if db_standings:
             standings: list[ChampionshipStandingResponse] = []
@@ -2006,8 +2018,17 @@ class Service:
             season=ChampionshipSeasonResponse.model_validate(season_data),
             stages=stages,
             standings=standings,
-            next_season=ChampionshipNextSeasonResponse.model_validate(next_season),
+            next_season=ChampionshipNextSeasonResponse.model_validate(next_season_data),
         )
+
+    async def join_championship(
+        self,
+        *,
+        user_id: str,
+    ) -> ChampionshipResponse:
+        """Enrolls the user in the active championship season."""
+        await self._repository.join_championship(user_id=user_id)
+        return await self.get_championship(user_id=user_id)
 
     async def complete_championship_stage(
         self,
@@ -2068,6 +2089,13 @@ class Service:
             stage_order=stage_order,
             points=int(stage.get("points_to_earn", 0) or 0),
         )
+        # Check if finishing final stage and check if champion
+        new_completed_count = len(completed_set) + 1
+        if new_completed_count >= len(ordered):
+            final_points = int((stats or {}).get("championship_points", 0) or 0) + int(stage.get("points_to_earn", 0) or 0)
+            player_rank, _ = await self._repository.championship_rank_and_total(final_points, user_id=user_id)
+            if player_rank == 1:
+                await self._repository.increment_user_won(user_id)
         return await self.get_championship(user_id=user_id)
 
     async def create_championship(
@@ -2730,16 +2758,21 @@ class Service:
         if doc is None:
             raise NotFoundError("Topic battle not found.", code="topic_battle_not_found")
 
-        if str(doc.get("owner_user_id") or "") == user_id:
+        is_championship = doc.get("is_championship_stage") or str(battle_id).startswith("tb_demo_") or "tb_demo" in str(battle_id)
+        if str(doc.get("owner_user_id") or "") == user_id and not is_championship:
             raise PermissionDeniedError(
                 "You cannot answer a battle you created.",
                 code="host_cannot_answer",
             )
-        if user_id not in [str(uid) for uid in doc.get("participants", [])]:
-            raise PermissionDeniedError(
-                "Join the battle before answering.",
-                code="battle_not_joined",
-            )
+        participants = [str(uid) for uid in doc.get("participants", [])]
+        if user_id not in participants:
+            if is_championship:
+                await self._repository.join_topic_battle(battle_id, user_id)
+            else:
+                raise PermissionDeniedError(
+                    "Join the battle before answering.",
+                    code="battle_not_joined",
+                )
 
         questions = doc.get("questions", [])
         question = next(

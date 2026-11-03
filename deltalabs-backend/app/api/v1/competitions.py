@@ -109,6 +109,15 @@ async def get_championship(
     )
 
 
+@router.post("/championship/join", response_model=ChampionshipResponse)
+async def join_championship(
+    user: CurrentUser = Depends(get_current_user),  # noqa: B008
+    service: CompetitionsService = Depends(_competitions_service),  # noqa: B008
+) -> ChampionshipResponse:
+    """Joins the active Championship season."""
+    return await service.join_championship(user_id=user.user_id)
+
+
 @router.post("/championship", response_model=ChampionshipResponse)
 async def create_championship(
     payload: ChampionshipCreateRequest,

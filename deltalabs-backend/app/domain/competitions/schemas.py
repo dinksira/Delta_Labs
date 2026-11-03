@@ -543,6 +543,9 @@ class ChampionshipSeasonResponse(BaseModel):
     total_points: int = Field(**_alias("totalPoints"))
     player_rank: int = Field(**_alias("playerRank"))
     total_players: int = Field(**_alias("totalPlayers"))
+    has_joined: bool = Field(default=False, **_alias("hasJoined"))
+    is_winner: bool = Field(default=False, **_alias("isWinner"))
+    is_completed: bool = Field(default=False, **_alias("isCompleted"))
 
 
 class ChampionshipNextSeasonResponse(BaseModel):

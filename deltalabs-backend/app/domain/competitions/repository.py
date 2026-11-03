@@ -617,6 +617,42 @@ class Repository:
     # Active championship season (singleton store + per-user reset)
     # ========================================================================
 
+    async def join_championship(self, user_id: str) -> dict[str, Any] | None:
+        """Enrolls the user in the active championship season and initializes their stats."""
+        now = datetime.now(UTC)
+        await self._db["championships"].update_one(
+            {"_id": "active"},
+            {"$addToSet": {"participants": user_id}, "$set": {"updated_at": now}},
+        )
+        set_on_insert: dict[str, Any] = {
+            "_id": user_id,
+            "points": 0,
+            "joined": 1,
+            "hosted": 0,
+            "won": 0,
+            "championship_points": 0,
+            "championship_completed": [],
+            "created_at": now,
+        }
+        await self._db["competition_user_stats"].update_one(
+            {"_id": user_id},
+            {
+                "$set": {"championship_joined": True, "updated_at": now},
+                "$setOnInsert": set_on_insert,
+            },
+            upsert=True,
+        )
+        return await self.get_user_stats(user_id)
+
+    async def increment_user_won(self, user_id: str) -> None:
+        """Increments the won counter for tournament champions."""
+        now = datetime.now(UTC)
+        await self._db["competition_user_stats"].update_one(
+            {"_id": user_id},
+            {"$inc": {"won": 1}, "$set": {"updated_at": now}},
+            upsert=True,
+        )
+
     async def get_active_championship(self) -> dict[str, Any] | None:
         """Returns the persisted, currently hosted Championship season."""
         return await self._db["championships"].find_one({"_id": "active"})
@@ -746,19 +782,25 @@ class Repository:
             for doc in docs
         ]
 
-    async def championship_rank_and_total(self, points: int) -> tuple[int, int]:
+    async def championship_rank_and_total(
+        self, points: int, user_id: str | None = None
+    ) -> tuple[int, int]:
         """Real ``(rank, total)`` for a points value on the season ladder.
 
-        ``total`` counts every user who actually earned championship points;
+        ``total`` counts every user who entered or earned points;
         ``rank`` is standard competition ranking (tied players share a rank).
-        A user with no points is not on the ladder, so their rank is 0.
         """
         collection = self._db["competition_user_stats"]
-        total = await collection.count_documents({"championship_points": {"$gt": 0}})
+        total = await collection.count_documents({
+            "$or": [{"championship_points": {"$gt": 0}}, {"championship_joined": True}]
+        })
+        if total == 0 and user_id is not None:
+            total = 1
         if points <= 0:
-            return 0, total
+            higher = await collection.count_documents({"championship_points": {"$gt": 0}})
+            return (higher + 1 if user_id is not None else 0), max(total, 1 if user_id is not None else 0)
         higher = await collection.count_documents({"championship_points": {"$gt": points}})
-        return higher + 1, total
+        return higher + 1, max(total, 1)
 
     async def complete_game_stage_stats(
         self,
