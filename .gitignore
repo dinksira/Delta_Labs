@@ -47,3 +47,20 @@ deltalabs-frontend/rule.md
 desktop_architecture_guide.md
 delta-labs-ai-context.md
 /Delta_Competition_Module_Analysis.md
+
+# Presentations, HTML Prototypes & Local Docs
+COMPETITION_TASKS_TECHNICAL_NONTECHNICAL_PRESENTATION.md
+ONLINE_COMPETITION_PROJECT_TRACKING_PRESENTATION.md
+ONLINE_COMPETITION_MODULE_PRESENTATION.md
+Project_Tracking_*.xlsx
+*.xlsx
+admin.html
+Loop login and sign up.html
+uvicorn.out.log
+/deltalabs-admin/docs/
+
+# Credentials & Environment Files
+*.env
+*.env.*
+!*.env.example
+.vscode/

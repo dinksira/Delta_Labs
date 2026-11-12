@@ -43,6 +43,29 @@ async def require_org_membership(
         )
 
 
+async def require_system_admin(
+    user: CurrentUser = Depends(get_current_user),  # noqa: B008
+    authz: AuthorizationService = Depends(get_authorization_service),  # noqa: B008
+) -> CurrentUser:
+    """Require platform-level administration rights in at least one org."""
+    my_orgs = await authz.list_my_orgs(user_id=user.user_id)
+    for org in my_orgs.items:
+        profile = await authz.get_access_profile(user_id=user.user_id, org_id=org.id)
+        permissions = set(profile.permissions)
+        if (
+            "*" in permissions
+            or "system:manage_features" in permissions
+            or "system_admin" in profile.role_keys
+        ):
+            return user
+
+    raise PermissionDeniedError(
+        "System administration permission is required.",
+        code="system_admin_required",
+        details={"requiredRole": "system_admin"},
+    )
+
+
 # ################################ /HELPERS ################################
 
 

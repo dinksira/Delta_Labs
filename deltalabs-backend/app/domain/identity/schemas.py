@@ -240,4 +240,59 @@ class RecoverResetResponse(BaseModel):
     status: str = "password_reset"
 
 
+class AdminUserListItem(BaseModel):
+    """Admin-facing user summary row."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    user_id: str = Field(serialization_alias="userId")
+    username: str
+    full_name: str | None = Field(default=None, serialization_alias="fullName")
+    email: str | None = None
+    phone_e164: str | None = Field(default=None, serialization_alias="phoneE164")
+    is_active: bool = Field(serialization_alias="isActive")
+    is_verified: bool = Field(serialization_alias="isVerified")
+    created_at: datetime = Field(serialization_alias="createdAt")
+
+
+class AdminUserDetail(AdminUserListItem):
+    """Admin-facing user detail with session metadata."""
+
+    updated_at: datetime = Field(serialization_alias="updatedAt")
+    bio: str | None = None
+    avatar_url: str | None = Field(default=None, serialization_alias="avatarUrl")
+    active_sessions: int = Field(default=0, serialization_alias="activeSessions")
+    last_session_at: datetime | None = Field(default=None, serialization_alias="lastSessionAt")
+
+
+class AdminUserListResponse(BaseModel):
+    """Paginated admin user listing."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    items: list[AdminUserListItem] = Field(default_factory=list)
+    total: int
+    page: int
+    page_size: int = Field(serialization_alias="pageSize")
+    total_pages: int = Field(serialization_alias="totalPages")
+
+
+class AdminUserStatusUpdate(BaseModel):
+    """Payload to activate or deactivate an account."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    is_active: bool = Field(alias="isActive")
+    reason: str | None = Field(default=None, max_length=500)
+
+
+class AdminSessionRevokeResponse(BaseModel):
+    """Result of revoking every session for a user."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    user_id: str = Field(serialization_alias="userId")
+    revoked_sessions: int = Field(serialization_alias="revokedSessions")
+
+
 # ################################ /TYPES ################################

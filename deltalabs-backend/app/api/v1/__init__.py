@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.v1.admin_users import router as admin_users_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.certification import router as certification_router
 from app.api.v1.chatroom import router as chatroom_router
@@ -10,12 +11,12 @@ from app.api.v1.enrollments import router as enrollments_router
 from app.api.v1.features import org_router as org_features_router
 from app.api.v1.features import router as features_router
 from app.api.v1.feed import router as feed_router
-from app.api.v1.live_duels import router as live_duels_router
 from app.api.v1.help_support import router as help_support_router
 from app.api.v1.library import router as library_router
+from app.api.v1.live_duels import router as live_duels_router
+from app.api.v1.me import router as me_router
 from app.api.v1.media import org_router as org_media_router
 from app.api.v1.media import router as media_router
-from app.api.v1.me import router as me_router
 from app.api.v1.orgs import router as orgs_router
 from app.api.v1.planner import router as planner_router
 from app.api.v1.rent_lab import org_router as org_rent_lab_router
@@ -34,6 +35,7 @@ api_router = APIRouter()
 api_router.include_router(system_router)
 api_router.include_router(auth_router)
 api_router.include_router(me_router)
+api_router.include_router(admin_users_router)
 api_router.include_router(orgs_router)
 api_router.include_router(feed_router)
 api_router.include_router(search_router)

@@ -8,7 +8,7 @@ from typing import Any
 from uuid import uuid4
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pymongo import ASCENDING
+from pymongo import ASCENDING, DESCENDING
 
 from app.domain.identity.schemas import UserRecord
 
@@ -248,6 +248,71 @@ class Repository:
         )
         docs = await cursor.to_list(length=limit)
         return [self._to_user_record(doc) for doc in docs]
+
+    async def list_users(
+        self,
+        *,
+        query: str | None = None,
+        is_active: bool | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[UserRecord], int]:
+        """Paginated admin listing with optional status and text filters."""
+        filters: dict[str, Any] = {}
+        if is_active is not None:
+            filters["is_active"] = is_active
+        raw = (query or "").strip()
+        if raw:
+            pattern = re.escape(raw)
+            rx: dict[str, str] = {"$regex": pattern, "$options": "i"}
+            filters["$or"] = [
+                {"username_normalized": rx},
+                {"full_name": rx},
+                {"email": rx},
+                {"phone_e164": rx},
+            ]
+
+        collection = self._db["users"]
+        total = int(await collection.count_documents(filters))
+        cursor = (
+            collection.find(filters)
+            .sort([("created_at", DESCENDING)])
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+        )
+        docs = await cursor.to_list(length=page_size)
+        return [self._to_user_record(doc) for doc in docs], total
+
+    async def set_user_active(self, *, user_id: str, is_active: bool) -> bool:
+        """Set account active flag; returns whether the user exists."""
+        now = datetime.now(UTC)
+        result = await self._db["users"].update_one(
+            {"_id": user_id},
+            {"$set": {"is_active": is_active, "updated_at": now}},
+        )
+        return result.matched_count > 0
+
+    async def count_active_sessions(self, *, user_id: str) -> int:
+        now = datetime.now(UTC)
+        return int(
+            await self._db["user_sessions"].count_documents(
+                {
+                    "user_id": user_id,
+                    "revoked_at": None,
+                    "expires_at": {"$gt": now},
+                }
+            )
+        )
+
+    async def find_latest_session_at(self, *, user_id: str) -> datetime | None:
+        doc = await self._db["user_sessions"].find_one(
+            {"user_id": user_id},
+            sort=[("created_at", DESCENDING)],
+        )
+        if doc is None:
+            return None
+        created_at = doc.get("created_at")
+        return created_at if isinstance(created_at, datetime) else None
 
     @staticmethod
     def _to_user_record(doc: dict[str, Any]) -> UserRecord:

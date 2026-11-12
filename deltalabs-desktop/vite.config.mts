@@ -16,7 +16,7 @@ export default defineConfig({
     // Blanket fallback FIRST so specific keys below always win
     'process.env': '{}',
     'process.env.NODE_ENV': JSON.stringify('production'),
-    'process.env.NEXT_PUBLIC_API_BASE_URL': JSON.stringify('https://delta-labs.onrender.com'),
+    'process.env.NEXT_PUBLIC_API_BASE_URL': JSON.stringify('http://localhost:8081'),
     'process.env.NEXT_PUBLIC_FEED_DEBUG_WORKER_HEALTH': JSON.stringify('false'),
     // Show built-in mock videos when the backend returns 0 items (e.g. cold start on Render free tier)
     'process.env.NEXT_PUBLIC_FEED_DEBUG_USE_LOCAL_VIDEOS_WHEN_EMPTY': JSON.stringify('true'),
