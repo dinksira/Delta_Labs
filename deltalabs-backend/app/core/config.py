@@ -281,7 +281,7 @@ class Settings(BaseSettings):
     )
 
     cors_origins: str = Field(
-        default="http://localhost:3000",
+        default="http://localhost:3000,http://localhost:4000,https://delta-labs-rose.vercel.app",
         description="Comma-separated allowed CORS origins",
     )
 
