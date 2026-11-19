@@ -5,6 +5,7 @@ export { useCompetitionHubData } from "./useCompetitionHubData";
 export { competitionHubQueryKeys } from "./competitionHubQueryKeys";
 export { championshipQueryKeys } from "./championshipQueryKeys";
 export { useChampionship } from "./useChampionship";
+export { useJoinChampionship } from "./useJoinChampionship";
 export { useCompleteChampionshipStage } from "./useCompleteChampionshipStage";
 export { useCreateChampionship } from "./useCreateChampionship";
 export { useCompleteGameStage } from "./useCompleteGameStage";

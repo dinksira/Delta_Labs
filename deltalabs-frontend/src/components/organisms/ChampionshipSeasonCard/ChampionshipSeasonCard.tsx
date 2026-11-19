@@ -32,6 +32,41 @@ export function ChampionshipSeasonCard({
         className,
       )}
     >
+      {/* Season end state banner */}
+      {season.isCompleted && (
+        <div
+          className={cn(
+            "flex items-center gap-3.5 rounded-xl border p-4 shadow-sm",
+            season.isWinner
+              ? "border-warning-500/50 bg-gradient-to-r from-warning-50 via-warning-100/40 to-warning-50 text-warning-900 dark:from-warning-950/30 dark:via-warning-900/20 dark:to-warning-950/30 dark:text-warning-200"
+              : "border-border-default bg-surface-muted text-text-primary",
+          )}
+        >
+          <span
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-lg",
+              season.isWinner
+                ? "bg-warning-500 text-white"
+                : "bg-surface-default text-text-secondary shadow-xs",
+            )}
+          >
+            <Trophy className="size-5" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-bold">
+              {season.isWinner
+                ? `🏆 Champion! You are the Season ${season.number} Champion!`
+                : `Season ${season.number} Complete`}
+            </p>
+            <p className="text-xs text-text-secondary">
+              {season.playerRank > 0
+                ? `Final Placement: #${season.playerRank} of ${season.totalPlayers} competitors · ${season.pointsEarned.toLocaleString()} pts`
+                : `${season.pointsEarned.toLocaleString()} pts collected across all stages`}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex size-11 items-center justify-center rounded-xl bg-secondary-600 text-white">

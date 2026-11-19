@@ -70,6 +70,10 @@ export async function fetchChampionship() {
   return apiClient.get<ChampionshipApiResponse>("/v1/competitions/championship");
 }
 
+export async function joinChampionship(): Promise<ChampionshipApiResponse> {
+  return apiClient.post<ChampionshipApiResponse>("/v1/competitions/championship/join");
+}
+
 export async function completeChampionshipStage(stageOrder: number) {
   return apiClient.post<ChampionshipApiResponse>(
     `/v1/competitions/championship/stages/${stageOrder}/complete`,

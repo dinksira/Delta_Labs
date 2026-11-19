@@ -20,11 +20,13 @@ const statusLabel: Record<ChampionshipStage["status"], string> = {
 
 export interface ChampionshipStageCardProps extends Omit<ComponentProps<"div">, "onPlay"> {
   stage: ChampionshipStage;
+  hasJoined?: boolean;
   onPlay?: (stage: ChampionshipStage) => void;
 }
 
 export function ChampionshipStageCard({
   stage,
+  hasJoined = true,
   onPlay,
   className,
 }: Readonly<ChampionshipStageCardProps>) {
@@ -76,18 +78,27 @@ export function ChampionshipStageCard({
         )}
       </div>
 
-      {isUnlocked && onPlay && (
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          onClick={() => onPlay(stage)}
-          className="mt-auto w-full"
-        >
-          <Play className="size-4" />
-          Play stage
-          <ChevronRight className="size-4" />
-        </Button>
+      {isUnlocked && (
+        hasJoined ? (
+          onPlay && (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => onPlay(stage)}
+              className="mt-auto w-full"
+            >
+              <Play className="size-4" />
+              Play stage
+              <ChevronRight className="size-4" />
+            </Button>
+          )
+        ) : (
+          <div className="mt-auto flex items-center justify-center gap-1.5 rounded-xl border border-border-subtle bg-surface-muted/80 py-2 text-xs font-semibold text-text-secondary">
+            <Lock className="size-3.5" aria-hidden />
+            Join tournament to play
+          </div>
+        )
       )}
     </div>
   );

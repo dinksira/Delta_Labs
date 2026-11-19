@@ -2236,6 +2236,8 @@ class Service:
         }
         await self._repository.upsert_active_championship(doc)
         await self._repository.reset_championship_progress()
+        if user_id:
+            await self._repository.join_championship(user_id=user_id)
         return await self.get_championship(user_id=user_id)
 
     async def _compile_stage_battle(

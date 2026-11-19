@@ -28,6 +28,10 @@ export interface ChampionshipPageTemplateProps {
   nextSeason: ChampionshipNextSeason | null;
   stages: ChampionshipStage[];
   standings: DuelLeaderboardEntry[];
+  hasJoined?: boolean;
+  onJoin?: () => void;
+  isJoining?: boolean;
+  joinError?: string | null;
   onPlayStage?: (stage: ChampionshipStage) => void;
 
   statusSlot?: ReactNode;
@@ -46,6 +50,10 @@ export function ChampionshipPageTemplate({
   nextSeason,
   stages,
   standings,
+  hasJoined = false,
+  onJoin,
+  isJoining = false,
+  joinError,
   onPlayStage,
 
   statusSlot,
@@ -105,6 +113,41 @@ export function ChampionshipPageTemplate({
         nextSeason={nextSeason ?? emptyNextSeason}
       />
 
+      {/* Join Tournament Banner if not yet joined */}
+      {season && !hasJoined && (
+        <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-primary-500/30 bg-primary-50/60 p-5 shadow-xs dark:bg-primary-950/20 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-3.5">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
+              <Trophy className="size-6" aria-hidden />
+            </span>
+            <div>
+              <h3 className="text-base font-bold text-text-primary">
+                Join Season {season.number} Championship
+              </h3>
+              <p className="text-xs text-text-secondary">
+                Compete across {stages.length} ladder stages to earn points, claim ETB prizes, and climb the leaderboard!
+              </p>
+              {joinError && (
+                <p className="mt-1 text-xs font-medium text-error-600 dark:text-error-400">
+                  {joinError}
+                </p>
+              )}
+            </div>
+          </div>
+          {onJoin && (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={onJoin}
+              disabled={isJoining}
+              className="shrink-0"
+            >
+              {isJoining ? "Joining..." : "Join Tournament"}
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Stages + standings */}
       <div className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-3">
         <section
@@ -125,7 +168,12 @@ export function ChampionshipPageTemplate({
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {stages.map((stage) => (
-              <ChampionshipStageCard key={stage.id} stage={stage} onPlay={onPlayStage} />
+              <ChampionshipStageCard
+                key={stage.id}
+                stage={stage}
+                hasJoined={hasJoined}
+                onPlay={onPlayStage}
+              />
             ))}
           </div>
         </section>

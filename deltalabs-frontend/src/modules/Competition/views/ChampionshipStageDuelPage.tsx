@@ -17,7 +17,7 @@ import { useEffect, useMemo, useRef } from "react";
 
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Coins, Loader2, Trophy } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Coins, Loader2, Trophy } from "lucide-react";
 
 import { Button } from "@/components/theme/Button";
 import { QuizBattleTemplate } from "@/components/templates/QuizBattleTemplate";
@@ -139,6 +139,35 @@ export function ChampionshipStageDuelPage() {
           {stage.prizePool}
         </span>
       </div>
+      {completeStage.isPending && (
+        <div className="flex items-center justify-center gap-2 border-b border-primary-500/20 bg-primary-50 px-4 py-2 text-xs font-medium text-primary-700 dark:bg-primary-950/30 dark:text-primary-300">
+          <Loader2 className="size-4 animate-spin" aria-hidden />
+          <span>Submitting stage results and unlocking next challenge...</span>
+        </div>
+      )}
+      {completeStage.isSuccess && (
+        <div className="flex items-center justify-between gap-3 border-b border-success-500/30 bg-success-50 px-4 py-2.5 text-xs font-semibold text-success-800 dark:bg-success-950/30 dark:text-success-200 md:px-6">
+          <div className="flex items-center gap-2">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success-600 text-white">
+              <CheckCircle2 className="size-3.5" aria-hidden />
+            </span>
+            <span>
+              Stage complete! Earned <strong>+{stage.pointsToEarn} championship pts</strong>. Next stage unlocked!
+            </span>
+          </div>
+          <Button variant="primary" size="sm" onClick={handleGoToTournament}>
+            View Standings
+          </Button>
+        </div>
+      )}
+      {completeStage.isError && (
+        <div className="flex items-center justify-between gap-3 border-b border-error-500/30 bg-error-50 px-4 py-2 text-xs text-error-700 dark:bg-error-950/30 dark:text-error-300 md:px-6">
+          <span>Failed to record stage completion. Please return to the championship bracket.</span>
+          <Button variant="ghost" size="sm" onClick={handleGoToTournament}>
+            Return
+          </Button>
+        </div>
+      )}
       <QuizBattleTemplate
         quiz={quiz}
         state={duel.state}

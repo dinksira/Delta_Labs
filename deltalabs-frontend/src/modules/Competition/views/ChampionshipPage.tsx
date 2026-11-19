@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { ChampionshipPageTemplate } from "@/components/templates/ChampionshipPageTemplate";
 import { ChampionshipStageConfirmModal } from "@/components/organisms/ChampionshipStageConfirmModal";
 import { useChampionship } from "@/modules/Competition/hooks/useChampionship";
+import { useJoinChampionship } from "@/modules/Competition/hooks/useJoinChampionship";
 import type { ChampionshipStage } from "@/modules/Competition/types/championship";
 import type { DuelLeaderboardEntry } from "@/modules/Competition/types/duelQuiz";
 
@@ -15,6 +16,7 @@ const EMPTY_STANDINGS: DuelLeaderboardEntry[] = [];
 export function ChampionshipPage() {
   const router = useRouter();
   const query = useChampionship();
+  const joinMutation = useJoinChampionship();
   const [selectedStage, setSelectedStage] = useState<ChampionshipStage | null>(null);
 
   const data = query.data;
@@ -30,6 +32,10 @@ export function ChampionshipPage() {
   const handleCreateNew = useCallback(() => {
     router.push("/features/competitions/championship/host");
   }, [router]);
+
+  const handleJoin = useCallback(() => {
+    joinMutation.mutate();
+  }, [joinMutation]);
 
   const handlePlayStage = useCallback((stage: ChampionshipStage) => {
     if (stage.status !== "unlocked") {
@@ -77,6 +83,10 @@ export function ChampionshipPage() {
         nextSeason={data?.nextSeason ?? null}
         stages={data?.stages ?? []}
         standings={standings.length > 0 ? standings : EMPTY_STANDINGS}
+        hasJoined={data?.season.hasJoined ?? false}
+        onJoin={handleJoin}
+        isJoining={joinMutation.isPending}
+        joinError={joinMutation.error instanceof Error ? joinMutation.error.message : null}
         onPlayStage={handlePlayStage}
         statusSlot={statusSlot}
       />

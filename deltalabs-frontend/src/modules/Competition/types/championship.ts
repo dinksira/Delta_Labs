@@ -63,6 +63,12 @@ export interface ChampionshipSeason {
   totalPoints: number;
   playerRank: number;
   totalPlayers: number;
+  /** True when the current user has joined the active season. */
+  hasJoined?: boolean;
+  /** True when the current user has completed all stages (they are the champion). */
+  isWinner?: boolean;
+  /** True when the current user has finished all stages of the season. */
+  isCompleted?: boolean;
 }
 
 /** Info about the following season and whether it is unlocked yet. */
