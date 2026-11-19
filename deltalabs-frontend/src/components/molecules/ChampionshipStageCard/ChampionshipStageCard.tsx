@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 
-import { CheckCircle2, ChevronRight, Lock, Play } from "lucide-react";
+import { CheckCircle2, ChevronRight, Lock, Play, Trophy } from "lucide-react";
 
 import { Button } from "@/components/theme/Button";
 import type { ChampionshipStage } from "@/modules/Competition/types/championship";
@@ -21,12 +21,14 @@ const statusLabel: Record<ChampionshipStage["status"], string> = {
 export interface ChampionshipStageCardProps extends Omit<ComponentProps<"div">, "onPlay"> {
   stage: ChampionshipStage;
   hasJoined?: boolean;
+  isCreator?: boolean;
   onPlay?: (stage: ChampionshipStage) => void;
 }
 
 export function ChampionshipStageCard({
   stage,
   hasJoined = true,
+  isCreator = false,
   onPlay,
   className,
 }: Readonly<ChampionshipStageCardProps>) {
@@ -78,7 +80,12 @@ export function ChampionshipStageCard({
         )}
       </div>
 
-      {isUnlocked && (
+      {isCreator ? (
+        <div className="mt-auto flex items-center justify-center gap-1.5 rounded-xl border border-border-default bg-surface-muted/60 py-2 text-xs font-semibold text-text-secondary">
+          <Trophy className="size-3.5 text-secondary-600" aria-hidden />
+          Host Managed Stage
+        </div>
+      ) : isUnlocked ? (
         hasJoined ? (
           onPlay && (
             <Button
@@ -99,7 +106,7 @@ export function ChampionshipStageCard({
             Join tournament to play
           </div>
         )
-      )}
+      ) : null}
     </div>
   );
 }

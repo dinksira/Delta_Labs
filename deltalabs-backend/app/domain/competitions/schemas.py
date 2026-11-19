@@ -588,6 +588,8 @@ class ChampionshipSeasonResponse(BaseModel):
     has_joined: bool = Field(default=False, **_alias("hasJoined"))
     is_winner: bool = Field(default=False, **_alias("isWinner"))
     is_completed: bool = Field(default=False, **_alias("isCompleted"))
+    is_creator: bool = Field(default=False, **_alias("isCreator"))
+    can_join: bool = Field(default=True, **_alias("canJoin"))
 
 
 class ChampionshipNextSeasonResponse(BaseModel):

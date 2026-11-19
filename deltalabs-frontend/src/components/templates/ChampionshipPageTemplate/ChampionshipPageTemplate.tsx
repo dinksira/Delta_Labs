@@ -29,6 +29,8 @@ export interface ChampionshipPageTemplateProps {
   stages: ChampionshipStage[];
   standings: DuelLeaderboardEntry[];
   hasJoined?: boolean;
+  isCreator?: boolean;
+  canJoin?: boolean;
   onJoin?: () => void;
   isJoining?: boolean;
   joinError?: string | null;
@@ -51,6 +53,8 @@ export function ChampionshipPageTemplate({
   stages,
   standings,
   hasJoined = false,
+  isCreator = false,
+  canJoin = true,
   onJoin,
   isJoining = false,
   joinError,
@@ -113,8 +117,38 @@ export function ChampionshipPageTemplate({
         nextSeason={nextSeason ?? emptyNextSeason}
       />
 
-      {/* Join Tournament Banner if not yet joined */}
-      {season && !hasJoined && (
+      {/* Host Oversight Banner for Creator */}
+      {season && isCreator && (
+        <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-secondary-500/30 bg-secondary-50/70 p-5 shadow-xs dark:bg-secondary-950/20 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-3.5">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary-600 text-white shadow-sm">
+              <Trophy className="size-6" aria-hidden />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-text-primary">
+                  Tournament Host Mode · Season {season.number}
+                </h3>
+                <span className="rounded-full bg-secondary-100 px-2 py-0.5 text-xs font-semibold text-secondary-800 dark:bg-secondary-900/40 dark:text-secondary-300">
+                  Host View
+                </span>
+              </div>
+              <p className="text-xs text-text-secondary">
+                You created this Championship season. In accordance with competitive integrity rules, hosts manage and track live standings while participants compete for points and prizes.
+              </p>
+            </div>
+          </div>
+          {onCreateNew && (
+            <Button variant="secondary" size="sm" onClick={onCreateNew} className="shrink-0">
+              <Trophy className="size-4" />
+              Host Another Season
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Join Tournament Banner if not yet joined and eligible */}
+      {season && !isCreator && !hasJoined && canJoin && (
         <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-primary-500/30 bg-primary-50/60 p-5 shadow-xs dark:bg-primary-950/20 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3.5">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
@@ -172,6 +206,7 @@ export function ChampionshipPageTemplate({
                 key={stage.id}
                 stage={stage}
                 hasJoined={hasJoined}
+                isCreator={isCreator}
                 onPlay={onPlayStage}
               />
             ))}

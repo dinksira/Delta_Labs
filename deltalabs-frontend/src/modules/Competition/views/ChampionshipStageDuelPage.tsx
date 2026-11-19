@@ -92,6 +92,22 @@ export function ChampionshipStageDuelPage() {
     return <LoadingNotice label="Opening the tournament..." />;
   }
 
+  if (championshipQuery.data?.season.isCreator) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
+        <Trophy className="size-12 text-secondary-600" aria-hidden />
+        <h2 className="text-xl font-bold text-text-primary">Tournament Host Mode</h2>
+        <p className="max-w-md text-sm text-text-secondary">
+          As the creator and host of this Championship, you oversee tournament management and monitor competitor scores. In accordance with competitive integrity rules, hosts cannot play stages or claim rewards.
+        </p>
+        <Button variant="primary" size="sm" onClick={handleBack}>
+          <ArrowLeft className="size-4" />
+          Return to Tournament
+        </Button>
+      </div>
+    );
+  }
+
   if (!stage) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-6">

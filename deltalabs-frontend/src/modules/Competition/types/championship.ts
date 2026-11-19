@@ -69,6 +69,10 @@ export interface ChampionshipSeason {
   isWinner?: boolean;
   /** True when the current user has finished all stages of the season. */
   isCompleted?: boolean;
+  /** True when the current user is the host/creator of this championship. */
+  isCreator?: boolean;
+  /** True when the current user is eligible to join the season (non-creators who haven't joined yet). */
+  canJoin?: boolean;
 }
 
 /** Info about the following season and whether it is unlocked yet. */

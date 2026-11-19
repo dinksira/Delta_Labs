@@ -1917,11 +1917,24 @@ class Service:
         # are no completions, so this reads empty rather than inventing rows.
         db_standings = await self._repository.championship_standings()
 
+        is_creator = bool(
+            stored is not None
+            and user_id
+            and str(stored.get("created_by") or "") == str(user_id)
+        )
         has_joined = False
-        if stats:
-            has_joined = bool(stats.get("championship_joined")) or bool(completed)
-        if stored is not None and user_id and user_id in stored.get("participants", []):
-            has_joined = True
+        if is_creator:
+            has_joined = False
+            can_join = False
+            player_points = 0
+            completed = []
+            completed_set = set()
+        else:
+            if stats:
+                has_joined = bool(stats.get("championship_joined")) or bool(completed)
+            if stored is not None and user_id and user_id in stored.get("participants", []):
+                has_joined = True
+            can_join = not has_joined
 
         ordered = sorted(stages_source, key=lambda s: int(s["order"]))
         next_unlocked = next(
@@ -1945,9 +1958,9 @@ class Service:
             )
             stages.append(ChampionshipStageResponse.model_validate(candidate))
 
-        is_completed = len(completed) >= len(ordered) and len(ordered) > 0
+        is_completed = (not is_creator) and len(completed) >= len(ordered) and len(ordered) > 0
         player_rank, total_players = await self._repository.championship_rank_and_total(
-            player_points, user_id=user_id if has_joined else None
+            player_points, user_id=user_id if (has_joined and not is_creator) else None
         )
         is_winner = is_completed and player_rank == 1
 
@@ -1955,11 +1968,13 @@ class Service:
         season_data["completed_stages"] = len(completed)
         season_data["current_stage_order"] = next_unlocked
         season_data["points_earned"] = player_points
-        season_data["player_rank"] = player_rank
+        season_data["player_rank"] = 0 if is_creator else player_rank
         season_data["total_players"] = total_players
         season_data["has_joined"] = has_joined
         season_data["is_winner"] = is_winner
         season_data["is_completed"] = is_completed
+        season_data["is_creator"] = is_creator
+        season_data["can_join"] = can_join
         if is_completed:
             season_data["status"] = "completed"
 
@@ -1977,6 +1992,8 @@ class Service:
                 if (
                     not inserted_you
                     and user_id is not None
+                    and not is_creator
+                    and has_joined
                     and player_points >= int(entry.get("points", 0) or 0)
                 ):
                     standings.append(
@@ -1995,7 +2012,7 @@ class Service:
                         points=int(entry.get("points", 0) or 0),
                     )
                 )
-            if not inserted_you and user_id is not None:
+            if not inserted_you and user_id is not None and not is_creator and has_joined:
                 standings.append(
                     ChampionshipStandingResponse(
                         rank=len(standings) + 1,
@@ -2004,7 +2021,7 @@ class Service:
                         is_current_user=True,
                     )
                 )
-        elif user_id is not None:
+        elif user_id is not None and not is_creator and has_joined:
             # Nobody on the ladder yet — the requesting user's own row is the
             # only entry that actually exists.
             standings = [
@@ -2031,6 +2048,12 @@ class Service:
         user_id: str,
     ) -> ChampionshipResponse:
         """Enrolls the user in the active championship season."""
+        stored = await self._repository.get_active_championship()
+        if stored is not None and user_id and str(stored.get("created_by") or "") == str(user_id):
+            raise PermissionDeniedError(
+                "Tournament creators cannot participate in their own tournament.",
+                code="creator_cannot_join",
+            )
         await self._repository.join_championship(user_id=user_id)
         return await self.get_championship(user_id=user_id)
 
@@ -2045,6 +2068,12 @@ class Service:
 
         Idempotent per stage: a stage can only be credited once.
         """
+        stored = await self._repository.get_active_championship()
+        if stored is not None and user_id and str(stored.get("created_by") or "") == str(user_id):
+            raise PermissionDeniedError(
+                "Tournament creators cannot play or score in their own tournament.",
+                code="creator_cannot_play",
+            )
         stored = await self._repository.get_active_championship()
         if stored is not None:
             ordered = sorted(
@@ -2236,8 +2265,6 @@ class Service:
         }
         await self._repository.upsert_active_championship(doc)
         await self._repository.reset_championship_progress()
-        if user_id:
-            await self._repository.join_championship(user_id=user_id)
         return await self.get_championship(user_id=user_id)
 
     async def _compile_stage_battle(

@@ -84,6 +84,8 @@ export function ChampionshipPage() {
         stages={data?.stages ?? []}
         standings={standings.length > 0 ? standings : EMPTY_STANDINGS}
         hasJoined={data?.season.hasJoined ?? false}
+        isCreator={data?.season.isCreator ?? false}
+        canJoin={data?.season.canJoin ?? true}
         onJoin={handleJoin}
         isJoining={joinMutation.isPending}
         joinError={joinMutation.error instanceof Error ? joinMutation.error.message : null}
