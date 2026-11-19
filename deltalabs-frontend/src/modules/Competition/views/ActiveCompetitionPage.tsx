@@ -83,11 +83,15 @@ export function ActiveCompetitionPage() {
   const handleJoinBattle = useCallback(
     (id: string) => {
       const target = battles.find((battle) => battle.id === id);
-      if (target) {
-        joinModal.openFor(target);
+      // Owners cannot join their own battle — redirect to management console.
+      if (!target) return;
+      if (target.isOwner) {
+        router.push(`/features/competitions/${target.id}`);
+        return;
       }
+      joinModal.openFor(target);
     },
-    [battles, joinModal],
+    [battles, joinModal, router],
   );
 
   const handleResumeBattle = useCallback(

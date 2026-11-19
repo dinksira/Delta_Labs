@@ -10,9 +10,7 @@ import {
   CalendarClock,
   Gift,
   ListChecks,
-  Settings,
   Swords,
-  Table2,
   Ticket,
   Timer,
   Trophy,
@@ -26,7 +24,6 @@ import { fetchTopicBattle } from "@/modules/Competition/api";
 import { useTopicBattleParticipants } from "@/modules/Competition/hooks";
 import { topicBattleQueryKeys } from "@/modules/Competition/hooks/topicBattleQueryKeys";
 import { useJoinTopicBattle } from "@/modules/Competition/hooks/useJoinTopicBattle";
-import { CompetitionManagementTableView } from "@/modules/Competition/managementTable/CompetitionManagementTableView";
 import {
   formatEndsDate,
   getFormatLabel,
@@ -73,7 +70,6 @@ export function CompetitionDetailPage() {
 
   const joinMutation = useJoinTopicBattle();
   const [joinError, setJoinError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<"overview" | "manage">("overview");
 
   const handleBack = useCallback(() => {
     router.back();
@@ -127,6 +123,7 @@ export function CompetitionDetailPage() {
     );
   }
 
+  // ── Participant view ──────────────────────────────────────────────────────
   return (
     <div className="mx-auto flex h-full max-w-4xl flex-col gap-6 overflow-y-auto p-4 md:p-6">
       {/* Header */}
@@ -172,127 +169,60 @@ export function CompetitionDetailPage() {
         </div>
       </div>
 
-      {/* Owner tab switcher */}
-      {battle.isOwner ? (
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveView("overview")}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-              activeView === "overview"
-                ? "bg-primary-600 text-white"
-                : "border border-border-default text-text-secondary hover:bg-surface-muted"
-            }`}
-          >
-            <Settings className="size-4" aria-hidden />
-            Overview
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveView("manage")}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-              activeView === "manage"
-                ? "bg-primary-600 text-white"
-                : "border border-border-default text-text-secondary hover:bg-surface-muted"
-            }`}
-          >
-            <Table2 className="size-4" aria-hidden />
-            Manage &amp; Track
-          </button>
+      {/* Info grid */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <InfoCard icon={Gift} label="Prize pool" value={battle.prizePool} />
+        <InfoCard icon={Ticket} label="Entry fee" value={battle.entryFee} />
+        <InfoCard
+          icon={Users}
+          label="Players"
+          value={`${battle.playersJoined}/${battle.playersMax}`}
+        />
+        <InfoCard
+          icon={CalendarClock}
+          label="Ends"
+          value={formatEndsDate(battle.countdownEndsAt)}
+        />
+        <InfoCard icon={BookOpen} label="Subject" value={battle.subject} />
+        <InfoCard icon={ListChecks} label="Questions" value={battle.questions.length} />
+        <InfoCard icon={Swords} label="Format" value={getFormatLabel(battle.format)} />
+        <InfoCard icon={Timer} label="Duration" value={`${battle.durationMinutes} min round`} />
+        <InfoCard icon={Trophy} label="Prize rule" value={getPrizeRuleLabel(battle.prizeRule)} />
+        <InfoCard
+          icon={Users}
+          label="Visibility"
+          value={`${getVisibilityLabel(battle.visibility)} · ${getTimingLabel(battle.timing)}`}
+        />
+      </div>
+
+      {/* Participant action — join or resume; never shown to the owner */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={handleJoin}
+          disabled={joinMutation.isPending || battle.hasJoined}
+        >
+          {joinMutation.isPending
+            ? "Joining..."
+            : battle.hasJoined
+              ? "Joined ✓"
+              : "Join Competition"}
+        </Button>
+        <Button
+          variant="secondary"
+          size="lg"
+          onClick={() => router.push("/features/competitions/list")}
+        >
+          Browse Competitions
+        </Button>
+      </div>
+
+      {joinError ? (
+        <div className="rounded-xl border border-error-500 bg-error-50 px-4 py-3 text-sm text-error-700">
+          {joinError}
         </div>
       ) : null}
-
-      {/* Info cards */}
-      {activeView === "manage" && battle.isOwner ? (
-        <CompetitionManagementTableView battleId={battle.id} />
-      ) : (
-        <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <InfoCard icon={Gift} label="Prize pool" value={battle.prizePool} />
-            <InfoCard icon={Ticket} label="Entry fee" value={battle.entryFee} />
-            <InfoCard
-              icon={Users}
-              label="Players"
-              value={`${battle.playersJoined}/${battle.playersMax}`}
-            />
-            <InfoCard
-              icon={CalendarClock}
-              label="Ends"
-              value={formatEndsDate(battle.countdownEndsAt)}
-            />
-            <InfoCard
-              icon={BookOpen}
-              label="Subject"
-              value={battle.subject}
-            />
-            <InfoCard
-              icon={ListChecks}
-              label="Questions"
-              value={battle.questions.length}
-            />
-            <InfoCard
-              icon={Swords}
-              label="Format"
-              value={getFormatLabel(battle.format)}
-            />
-            <InfoCard
-              icon={Timer}
-              label="Duration"
-              value={`${battle.durationMinutes} min round`}
-            />
-            <InfoCard
-              icon={Trophy}
-              label="Prize rule"
-              value={getPrizeRuleLabel(battle.prizeRule)}
-            />
-            <InfoCard
-              icon={Users}
-              label="Visibility"
-              value={`${getVisibilityLabel(battle.visibility)} · ${getTimingLabel(battle.timing)}`}
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-wrap items-center gap-3">
-            {battle.isOwner ? (
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={() => setActiveView("manage")}
-              >
-                <Settings className="size-4" aria-hidden />
-                Manage & Track
-              </Button>
-            ) : (
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={handleJoin}
-                disabled={joinMutation.isPending || battle.hasJoined}
-              >
-                {joinMutation.isPending
-                  ? "Joining..."
-                  : battle.hasJoined
-                    ? "Joined"
-                    : "Join Competition"}
-              </Button>
-            )}
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => router.push("/features/competitions/list")}
-            >
-              Browse Competitions
-            </Button>
-          </div>
-
-          {joinError ? (
-            <div className="rounded-xl border border-error-500 bg-error-50 px-4 py-3 text-sm text-error-700">
-              {joinError}
-            </div>
-          ) : null}
-        </>
-      )}
     </div>
   );
 }
