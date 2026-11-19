@@ -39,7 +39,7 @@ export async function apiClient<T>(
 ): Promise<T> {
   const baseUrl =
     process.env.NEXT_PUBLIC_API_BASE_URL ||
-    "https://deltalabs-backend.onrender.com";
+    "https://delta-labs-agbn.onrender.com";
   const url = endpoint.startsWith("http") ? endpoint : `${baseUrl}${endpoint}`;
 
   const headers = new Headers(options.headers || {});
