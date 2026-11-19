@@ -686,6 +686,13 @@ class Repository:
         """Returns the persisted, currently hosted Championship season."""
         return await self._db["championships"].find_one({"_id": "active"})
 
+    async def list_all_championships(self) -> list[dict[str, Any]]:
+        """Returns all championships stored in MongoDB, active first, followed by historical."""
+        cursor = self._db["championships"].find(
+            {"_id": {"$ne": "active"}}
+        ).sort("updated_at", -1)
+        return await cursor.to_list(length=50)
+
     async def upsert_active_championship(self, doc: dict[str, Any]) -> dict[str, Any] | None:
         """Stores a new hosted Championship season as the active season and permanently archives past seasons."""
         # Archive any existing active championship under its historical season id

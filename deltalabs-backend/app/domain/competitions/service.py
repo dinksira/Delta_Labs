@@ -2399,7 +2399,58 @@ class Service:
                     }
 
         games: list[CompetitionGameResponse] = []
+
+        # Check for active championship stored in MongoDB
+        active_champ = await self._repository.get_active_championship()
+        if active_champ is not None:
+            c_season = active_champ.get("season") or {}
+            c_stages = active_champ.get("stages") or []
+            first_battle_id = str(c_stages[0].get("battle_id")) if c_stages and c_stages[0].get("battle_id") else "tb_demo_math_olympiad"
+            
+            game_stages: list[CompetitionGameStageResponse] = []
+            for s in c_stages:
+                game_stages.append(
+                    CompetitionGameStageResponse(
+                        id=str(s.get("id")),
+                        order=int(s.get("order", 1)),
+                        name=str(s.get("name")),
+                        short_label=str(s.get("short_label")),
+                        status=str(s.get("status", "locked")),
+                        starts_at=str(s.get("starts_at", "")),
+                        points_to_earn=int(s.get("points_to_earn", 0)),
+                        points_earned=int(s.get("points_earned", 0)),
+                        is_current=bool(s.get("is_current", False)),
+                        battle_id=s.get("battle_id"),
+                        entry_fee=str(s.get("entry_fee", "Free")),
+                        prize_pool=str(s.get("prize_pool", "")),
+                    )
+                )
+
+            champ_title = str(active_champ.get("title") or c_season.get("title") or "Championship Tournament")
+            champ_desc = str(active_champ.get("description") or f"Season {c_season.get('number', 1)} tournament. Compete through knockout stages, earn points, and win ETB prizes.")
+            champ_game = CompetitionGameResponse(
+                id=str(c_season.get("id") or "game_championship_rise"),
+                title=champ_title,
+                genre="Knockout Tournament",
+                description=champ_desc,
+                difficulty="All Levels",
+                tone="primary",
+                is_championship=True,
+                status="open",
+                points_to_earn=int(c_season.get("total_points", 2000)),
+                players_count=len(active_champ.get("participants", [])),
+                players_max=1000,
+                battle_id=first_battle_id,
+                unlock_hint=None,
+                stages=game_stages,
+            )
+            games.append(champ_game)
+
         for index, game in enumerate(_DEMO_GAMES_CATALOG):
+            # If we already have the active championship from MongoDB, skip the static demo championship
+            if active_champ is not None and game.get("is_championship"):
+                continue
+
             live: dict[str, object] = {}
             battle_id = game.get("battle_id")
             if isinstance(battle_id, str):

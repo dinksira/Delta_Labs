@@ -26,8 +26,9 @@ export function GamesPageTemplate({
   statusSlot,
   className,
 }: Readonly<GamesPageTemplateProps>) {
-  const openGames = games.filter((game) => game.status === "open");
-  const upcomingGames = games.filter((game) => game.status !== "open");
+  const tournaments = games.filter((game) => game.isChampionship);
+  const openGames = games.filter((game) => !game.isChampionship && game.status === "open");
+  const upcomingGames = games.filter((game) => !game.isChampionship && game.status !== "open");
 
   return (
     <div className={cn("flex h-full flex-col gap-5 overflow-y-auto p-4 md:p-6", className)}>
@@ -38,10 +39,10 @@ export function GamesPageTemplate({
           <Gamepad2 className="size-6 shrink-0 text-secondary-600" />
           <div className="min-w-0">
             <Typography as="h1" className="text-2xl font-semibold text-primary-600">
-              Games
+              Games &amp; Tournaments
             </Typography>
             <p className="text-sm text-text-secondary">
-              Pick a game, play the duel, and earn points toward your rank.
+              Pick a tournament or challenge game, compete in staged duels, and claim prizes.
             </p>
           </div>
         </div>
@@ -49,17 +50,43 @@ export function GamesPageTemplate({
           {onCreateNew && (
             <Button variant="primary" size="sm" onClick={onCreateNew}>
               <Trophy className="size-4" />
-              Create New
+              Create Tournament
             </Button>
           )}
           <span className="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-3 py-1.5 text-xs font-semibold text-success-700">
             <span className="size-1.5 rounded-full bg-success-500" aria-hidden />
-            {openGames.length} open now
+            {openGames.length + tournaments.length} open now
           </span>
         </div>
       </div>
 
       {statusSlot}
+
+      {/* Championship Tournaments Section */}
+      {tournaments.length > 0 && (
+        <section aria-labelledby="tournaments-heading">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Trophy className="size-5 text-secondary-600" aria-hidden />
+              <Typography
+                as="h2"
+                id="tournaments-heading"
+                className="text-lg font-semibold text-text-primary"
+              >
+                Championship Tournaments
+              </Typography>
+            </div>
+            <span className="text-sm tabular-nums text-text-secondary">
+              {tournaments.length} active
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {tournaments.map((game) => (
+              <GameCard key={game.id} game={game} onPlay={onPlayGame} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Open games */}
       {openGames.length > 0 && (
@@ -70,7 +97,7 @@ export function GamesPageTemplate({
               id="games-open-heading"
               className="text-lg font-semibold text-text-primary"
             >
-              Open now
+              Open Games &amp; Arena Battles
             </Typography>
             <span className="text-sm tabular-nums text-text-secondary">
               {openGames.length} games
