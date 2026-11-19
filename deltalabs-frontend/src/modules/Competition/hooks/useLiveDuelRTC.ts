@@ -81,6 +81,7 @@ export function useLiveDuelRTC({
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const remoteStreamsRef = useRef<Map<string, MediaStream>>(new Map());
   const pendingCandidatesRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
+  const makingOfferRef = useRef<Map<string, boolean>>(new Map());
   const [remoteStreams, setRemoteStreams] = useState<Readonly<Record<string, MediaStream>>>({});
   const [peerCount, setPeerCount] = useState(0);
 
@@ -113,40 +114,33 @@ export function useLiveDuelRTC({
     const videoTrack = stream?.getVideoTracks()[0] ?? null;
 
     const senders = pc.getSenders();
-    const audioSender = senders.find((sender) => sender.track?.kind === "audio");
-    const videoSender = senders.find((sender) => sender.track?.kind === "video");
+    const audioSender = senders.find(
+      (s) => s.track?.kind === "audio" || (s as { _kind?: string })._kind === "audio",
+    );
+    const videoSender = senders.find(
+      (s) => s.track?.kind === "video" || (s as { _kind?: string })._kind === "video",
+    );
 
-    if (audioSender && !audioTrack) {
-      pc.removeTrack(audioSender);
+    // Sync audio sender
+    if (audioSender && audioTrack && audioSender.track !== audioTrack) {
+      void audioSender.replaceTrack(audioTrack);
+    } else if (audioTrack && !audioSender && stream) {
+      const sender = pc.addTrack(audioTrack, stream);
+      (sender as { _kind?: string })._kind = "audio";
     }
-    if (videoSender && !videoTrack) {
-      pc.removeTrack(videoSender);
-    }
-    if (audioTrack && !audioSender && stream) {
-      pc.addTrack(audioTrack, stream);
-    }
-    if (videoTrack && !videoSender && stream) {
-      pc.addTrack(videoTrack, stream);
-    }
-    // (removeTrack/addTrack above trigger `onnegotiationneeded` on the peer.)
-  }, []);
 
-  const createOfferAndSend = useCallback(async (peerId: string, pc: RTCPeerConnection) => {
-    try {
-      if (pc.signalingState !== "stable") {
-        return;
+    // Sync video sender
+    if (videoSender) {
+      if (videoTrack) {
+        if (videoSender.track !== videoTrack) {
+          void videoSender.replaceTrack(videoTrack);
+        }
+      } else if (videoSender.track) {
+        void videoSender.replaceTrack(null);
       }
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      if (pc.localDescription) {
-        sendSignalRef.current?.({
-          type: "offer",
-          toUserId: peerId,
-          sdp: pc.localDescription.toJSON(),
-        });
-      }
-    } catch {
-      // Transient: another negotiation may have beaten us to this state.
+    } else if (videoTrack && stream) {
+      const sender = pc.addTrack(videoTrack, stream);
+      (sender as { _kind?: string })._kind = "video";
     }
   }, []);
 
@@ -171,28 +165,58 @@ export function useLiveDuelRTC({
       };
 
       pc.ontrack = (event) => {
-        const stream = event.streams[0] ?? new MediaStream([event.track]);
-        remoteStreamsRef.current.set(peerId, stream);
+        const receivers = pc.getReceivers();
+        const activeTracks = receivers
+          .map((r) => r.track)
+          .filter((t): t is MediaStreamTrack => Boolean(t));
+        const stream = event.streams[0] ?? new MediaStream(activeTracks);
+        for (const t of activeTracks) {
+          if (!stream.getTracks().some((existingTrack) => existingTrack.id === t.id)) {
+            stream.addTrack(t);
+          }
+        }
+        // Fresh wrapper ensures React consumers re-evaluate
+        remoteStreamsRef.current.set(peerId, new MediaStream(stream.getTracks()));
         commitRemoteStreams();
+
+        event.track.onended = () => {
+          const remaining = pc
+            .getReceivers()
+            .map((r) => r.track)
+            .filter((t): t is MediaStreamTrack => Boolean(t) && t.readyState === "live");
+          remoteStreamsRef.current.set(peerId, new MediaStream(remaining));
+          commitRemoteStreams();
+        };
       };
 
-      pc.onnegotiationneeded = () => {
-        void createOfferAndSend(peerId, pc);
+      // W3C Perfect Negotiation: onnegotiationneeded triggers offer
+      pc.onnegotiationneeded = async () => {
+        try {
+          makingOfferRef.current.set(peerId, true);
+          const offer = await pc.createOffer();
+          if (pc.signalingState !== "stable") {
+            return;
+          }
+          await pc.setLocalDescription(offer);
+          if (pc.localDescription) {
+            sendSignalRef.current?.({
+              type: "offer",
+              toUserId: peerId,
+              sdp: pc.localDescription.toJSON(),
+            });
+          }
+        } catch {
+          // Negotiation collision or superseded
+        } finally {
+          makingOfferRef.current.set(peerId, false);
+        }
       };
 
       syncTracksIntoPeer(peerId);
-
-      // Deterministic initiator: the smaller id offers first so both sides
-      // never fire an offer for the same connection at once (glare).
-      const localId = userIdRef.current;
-      if (localId != null && localId < peerId) {
-        void createOfferAndSend(peerId, pc);
-      }
-
       setPeerCount(peersRef.current.size);
       return pc;
     },
-    [commitRemoteStreams, createOfferAndSend, syncTracksIntoPeer],
+    [commitRemoteStreams, syncTracksIntoPeer],
   );
 
   const flushPendingCandidates = useCallback(async (peerId: string, pc: RTCPeerConnection) => {
@@ -218,6 +242,12 @@ export function useLiveDuelRTC({
     const remoteIds = new Set(remoteUserIds.filter((id) => id !== userId));
     for (const id of remoteIds) {
       ensurePeer(id);
+      // Immediately notify the newly linked peer of our current camera & mic state
+      sendSignalRef.current?.({
+        type: "media-state",
+        toUserId: id,
+        media: { cameraOff: isCameraOff, micMuted: isMicMuted },
+      });
     }
     for (const id of [...peersRef.current.keys()]) {
       if (!remoteIds.has(id)) {
@@ -225,11 +255,12 @@ export function useLiveDuelRTC({
         peersRef.current.delete(id);
         remoteStreamsRef.current.delete(id);
         pendingCandidatesRef.current.delete(id);
+        makingOfferRef.current.delete(id);
       }
     }
     setPeerCount(peersRef.current.size);
     commitRemoteStreams();
-  }, [enabled, userId, remoteUserIds, ensurePeer, commitRemoteStreams]);
+  }, [enabled, userId, remoteUserIds, isCameraOff, isMicMuted, ensurePeer, commitRemoteStreams]);
 
   // Keep every peer's senders in sync with the local camera+mic stream, and
   // broadcast our hardware state so remote tiles update immediately.
@@ -251,6 +282,7 @@ export function useLiveDuelRTC({
     const peers = peersRef.current;
     const remoteStreams = remoteStreamsRef.current;
     const pendingCandidates = pendingCandidatesRef.current;
+    const makingOffers = makingOfferRef.current;
     return () => {
       for (const pc of peers.values()) {
         pc.close();
@@ -258,6 +290,7 @@ export function useLiveDuelRTC({
       peers.clear();
       remoteStreams.clear();
       pendingCandidates.clear();
+      makingOffers.clear();
     };
   }, []);
 
@@ -277,42 +310,61 @@ export function useLiveDuelRTC({
       switch (signal.type) {
         case "offer": {
           const pc = ensurePeer(fromUserId);
-          if (pc.signalingState !== "stable") {
-            return;
-          }
-          // Include our local tracks in the answer before replying.
-          syncTracksIntoPeer(fromUserId);
-          void pc
-            .setRemoteDescription({ type: "offer", sdp: signal.sdp?.sdp ?? "" })
-            .then(async () => {
-              await flushPendingCandidates(fromUserId, pc);
-              const answer = await pc.createAnswer();
-              await pc.setLocalDescription(answer);
-              if (pc.localDescription) {
-                sendSignalRef.current?.({
-                  type: "answer",
-                  toUserId: fromUserId,
-                  sdp: pc.localDescription.toJSON(),
-                });
+          const makingOffer = makingOfferRef.current.get(fromUserId) ?? false;
+          const isPolite = (userIdRef.current ?? "") > fromUserId;
+          const offerCollision = makingOffer || pc.signalingState !== "stable";
+
+          const processOffer = async () => {
+            if (offerCollision) {
+              if (!isPolite) {
+                // Impolite peer drops colliding offer; polite peer rolls back
+                return;
               }
-            })
-            .catch(() => {
-              // Fall back: drop this peer; the next offer recreates it.
-              pc.close();
-              peersRef.current.delete(fromUserId);
-              remoteStreamsRef.current.delete(fromUserId);
-              setPeerCount(peersRef.current.size);
-              commitRemoteStreams();
-            });
+              await pc.setLocalDescription({ type: "rollback" });
+            }
+
+            syncTracksIntoPeer(fromUserId);
+            const sdpString =
+              signal.sdp?.sdp ?? (typeof signal.sdp === "string" ? signal.sdp : "");
+            if (!sdpString) {
+              return;
+            }
+            await pc.setRemoteDescription({ type: "offer", sdp: sdpString });
+            await flushPendingCandidates(fromUserId, pc);
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            if (pc.localDescription) {
+              sendSignalRef.current?.({
+                type: "answer",
+                toUserId: fromUserId,
+                sdp: pc.localDescription.toJSON(),
+              });
+            }
+          };
+
+          void processOffer().catch(() => {
+            // If renegotiation fails, drop peer so fresh offer recreates it
+            pc.close();
+            peersRef.current.delete(fromUserId);
+            remoteStreamsRef.current.delete(fromUserId);
+            makingOfferRef.current.delete(fromUserId);
+            setPeerCount(peersRef.current.size);
+            commitRemoteStreams();
+          });
           break;
         }
         case "answer": {
           const pc = ensurePeer(fromUserId);
-          if (pc.signalingState === "stable") {
+          if (pc.signalingState !== "have-local-offer") {
+            return;
+          }
+          const sdpString =
+            signal.sdp?.sdp ?? (typeof signal.sdp === "string" ? signal.sdp : "");
+          if (!sdpString) {
             return;
           }
           void pc
-            .setRemoteDescription({ type: "answer", sdp: signal.sdp?.sdp ?? "" })
+            .setRemoteDescription({ type: "answer", sdp: sdpString })
             .then(() => flushPendingCandidates(fromUserId, pc))
             .catch(() => {});
           break;

@@ -45,15 +45,45 @@ export function LiveVideoFeed({
 
   useEffect(() => {
     const video = videoRef.current;
-    if (video) {
-      video.srcObject = mediaStream;
+    if (!video) {
+      return undefined;
     }
+
+    video.srcObject = mediaStream;
+    if (mediaStream) {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err: unknown) => {
+          // If browser blocks unmuted remote autoplay before user gesture,
+          // play with mute fallback so the video feed never fails to appear.
+          if (err instanceof DOMException && err.name === "NotAllowedError" && !muted) {
+            video.muted = true;
+            void video.play().catch(() => {});
+          }
+        });
+      }
+    }
+
+    const handleTrackChange = () => {
+      if (video && mediaStream) {
+        if (video.srcObject !== mediaStream) {
+          video.srcObject = mediaStream;
+        }
+        void video.play().catch(() => {});
+      }
+    };
+
+    mediaStream?.addEventListener("addtrack", handleTrackChange);
+    mediaStream?.addEventListener("removetrack", handleTrackChange);
+
     return () => {
+      mediaStream?.removeEventListener("addtrack", handleTrackChange);
+      mediaStream?.removeEventListener("removetrack", handleTrackChange);
       if (video) {
         video.srcObject = null;
       }
     };
-  }, [mediaStream]);
+  }, [mediaStream, muted]);
 
   const shapeClasses: Record<NonNullable<LiveVideoFeedProps["shape"]>, string> = {
     square: "rounded-none",

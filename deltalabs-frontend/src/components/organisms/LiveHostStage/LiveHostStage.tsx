@@ -116,8 +116,12 @@ export function LiveHostStage({
   // If user is host: local stream (mirrored, muted).
   // If user is participant: remote host stream (unmirrored, audio enabled).
   const stageStream = isHost ? mediaStream : hostStream;
-  const stageCameraOff = isHost ? isCameraOff : (hostCameraOff ?? !hostStream);
-  const broadcasting = !stageCameraOff && Boolean(stageStream);
+  const hasLiveVideoTrack = Boolean(
+    stageStream?.getVideoTracks().some((track) => track.readyState === "live" && track.enabled !== false),
+  );
+  // Ground-truth broadcast: active when video track is live and not disabled
+  const stageCameraOff = isHost ? isCameraOff : (hostCameraOff ?? !hasLiveVideoTrack);
+  const broadcasting = !stageCameraOff && hasLiveVideoTrack;
 
   return (
     <section
@@ -135,6 +139,21 @@ export function LiveHostStage({
           muted={isHost}
           shape="square"
           className="absolute inset-0 z-0 size-full object-cover"
+        />
+      ) : null}
+
+      {/* Participant background audio playback when host camera is off but mic is live */}
+      {!isHost && hostStream && !broadcasting ? (
+        <audio
+          ref={(el) => {
+            if (el && el.srcObject !== hostStream) {
+              el.srcObject = hostStream;
+              void el.play().catch(() => {});
+            }
+          }}
+          autoPlay
+          className="hidden"
+          aria-hidden
         />
       ) : null}
 

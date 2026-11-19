@@ -181,7 +181,7 @@ function LiveDuelRoom({
     [room.participants],
   );
   const hostStream = hostParticipant ? (remoteStreams[hostParticipant.id] ?? null) : null;
-  const hostCameraOff = hostParticipant ? (hostParticipant.cameraOff ?? false) : false;
+  const hostCameraOff = hostParticipant ? (hostParticipant.cameraOff ?? true) : true;
 
   // Backend rooms boot from the registry seed instantly, then reconcile with
   // the authoritative room detail once the auth session is loaded — a fresh
