@@ -1,10 +1,12 @@
 import type { NextConfig } from "next";
 
+const isStaticExport = process.env.STATIC_EXPORT === "true" && !process.env.VERCEL;
+
 const nextConfig: NextConfig = {
   /** Hides the floating Next.js dev badge (N in a circle) in development. */
   devIndicators: false,
-  /** Static export for production builds only — dev needs dynamic school routes. */
-  ...(process.env.NODE_ENV === "production" ? { output: "export" as const } : {}),
+  /** Static export only when explicitly requested, not on Vercel */
+  ...(isStaticExport ? { output: "export" as const } : {}),
   images: {
     unoptimized: true,
   },
@@ -17,3 +19,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
