@@ -55,6 +55,10 @@ export interface LiveHostStageProps {
   isHost?: boolean;
   /** Host broadcast camera stream — shown full-bleed only when `isHost`. */
   mediaStream?: MediaStream | null;
+  /** Remote stream from the host, visible to participants on the big stage. */
+  hostStream?: MediaStream | null;
+  /** Remote host camera disabled state. */
+  hostCameraOff?: boolean;
   /** Non-null when getUserMedia failed (permission denied, no device, etc.). */
   mediaError?: string | null;
   /** Voice-activity state for the host focal point ripple. */
@@ -99,6 +103,8 @@ export function LiveHostStage({
   isCameraOff,
   isHost = false,
   mediaStream = null,
+  hostStream = null,
+  hostCameraOff,
   mediaError = null,
   isSpeaking = false,
   voiceLevel = 0,
@@ -107,7 +113,11 @@ export function LiveHostStage({
   onLeave,
   className,
 }: Readonly<LiveHostStageProps>) {
-  const broadcasting = isHost && !isCameraOff && Boolean(mediaStream);
+  // If user is host: local stream (mirrored, muted).
+  // If user is participant: remote host stream (unmirrored, audio enabled).
+  const stageStream = isHost ? mediaStream : hostStream;
+  const stageCameraOff = isHost ? isCameraOff : (hostCameraOff ?? !hostStream);
+  const broadcasting = !stageCameraOff && Boolean(stageStream);
 
   return (
     <section
@@ -117,20 +127,27 @@ export function LiveHostStage({
         className,
       )}
     >
-      {/* Host camera background — full-bleed, only when the host broadcasts.
-          Mirrored because this is the host's own self-view on their device */}
-      {broadcasting ? <LiveVideoFeed mediaStream={mediaStream} mirror className="absolute inset-0 z-0 size-full" /> : null}
+      {/* Host camera background — full-bleed on both host and participant side */}
+      {broadcasting ? (
+        <LiveVideoFeed
+          mediaStream={stageStream}
+          mirror={isHost}
+          muted={isHost}
+          shape="square"
+          className="absolute inset-0 z-0 size-full object-cover"
+        />
+      ) : null}
 
       {/* Gradient + glow overlays */}
       <div
         aria-hidden
         className={cn(
           "pointer-events-none absolute inset-0 z-[1] transition-opacity duration-300",
-          broadcasting ? "opacity-40" : "opacity-100",
+          broadcasting ? "bg-black/30 opacity-70" : "opacity-100",
         )}
       >
-        <div className="absolute -left-20 -top-24 size-80 rounded-full bg-primary-200/60 blur-3xl" />
-        <div className="absolute -bottom-24 -right-16 size-80 rounded-full bg-primary-300/50 blur-3xl" />
+        <div className="absolute -left-20 -top-24 size-80 rounded-full bg-primary-200/60 blur-3xl dark:bg-primary-900/30" />
+        <div className="absolute -bottom-24 -right-16 size-80 rounded-full bg-primary-300/50 blur-3xl dark:bg-primary-900/20" />
       </div>
 
       <div className="relative z-10 flex flex-wrap items-start justify-between gap-3 p-4">
@@ -140,9 +157,15 @@ export function LiveHostStage({
             <Users className="size-3.5" aria-hidden />
             {viewerCount.toLocaleString()}
           </span>
+          {broadcasting && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-black/40 px-2.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
+              <span className="size-1.5 rounded-full bg-success-400 animate-pulse" />
+              {isHost ? "Your Camera Live" : "Host Camera Live"}
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center gap-2.5 rounded-full bg-primary-900/60 py-1.5 pl-1.5 pr-4 text-white shadow-md backdrop-blur-sm">
+        <div className="flex items-center gap-2.5 rounded-full bg-primary-900/70 py-1.5 pl-1.5 pr-4 text-white shadow-md backdrop-blur-md">
           <Avatar name={host.name} src={host.avatarUrl} size="sm" />
           <div className="min-w-0 leading-tight">
             <p className="truncate text-sm font-semibold">{host.name}</p>
@@ -154,7 +177,7 @@ export function LiveHostStage({
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-6 px-4 py-8">
         {liveQuestion ? (
           <LiveQuestionCard question={liveQuestion} />
-        ) : (
+        ) : !broadcasting ? (
           <>
             <VoiceWaveIndicator active={isSpeaking} level={voiceLevel} size="lg" />
             <p className="flex items-center gap-2 text-xs font-semibold text-text-tertiary">
@@ -162,6 +185,10 @@ export function LiveHostStage({
               Waiting for the host to post the next question...
             </p>
           </>
+        ) : (
+          <div className="rounded-full bg-black/40 px-4 py-1.5 text-xs font-medium text-white/90 backdrop-blur-md">
+            Host is live on stage · Question will appear here
+          </div>
         )}
       </div>
 

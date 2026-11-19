@@ -174,6 +174,15 @@ function LiveDuelRoom({
     [room.participants, isMicMuted, isCameraOff],
   );
 
+  // Participant view of host broadcast: locate host participant in the room
+  // to grab their incoming WebRTC stream and camera-mute state.
+  const hostParticipant = useMemo(
+    () => room.participants.find((participant) => participant.isHost),
+    [room.participants],
+  );
+  const hostStream = hostParticipant ? (remoteStreams[hostParticipant.id] ?? null) : null;
+  const hostCameraOff = hostParticipant ? (hostParticipant.cameraOff ?? false) : false;
+
   // Backend rooms boot from the registry seed instantly, then reconcile with
   // the authoritative room detail once the auth session is loaded — a fresh
   // page load does not know the current user until then, so an early fetch
@@ -400,6 +409,10 @@ function LiveDuelRoom({
               liveQuestion={room.liveQuestion}
               postedQuestions={room.postedQuestions}
               onPostQuestion={handlePostQuestion}
+              participants={room.participants}
+              leaderboard={displayLeaderboard}
+              onEndDuel={handleRequestFinish}
+              isEnding={finishingDuel}
             />
           ) : undefined
         }
@@ -407,6 +420,8 @@ function LiveDuelRoom({
         isCameraOff={isCameraOff}
         isHost={effectiveIsHost}
         mediaStream={mediaStream}
+        hostStream={hostStream}
+        hostCameraOff={hostCameraOff}
         mediaError={mediaError}
         isSpeaking={isSpeaking}
         voiceLevel={voiceLevel}

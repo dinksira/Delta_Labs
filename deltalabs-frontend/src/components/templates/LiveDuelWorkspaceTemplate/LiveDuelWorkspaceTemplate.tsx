@@ -65,6 +65,10 @@ export interface LiveDuelWorkspaceTemplateProps {
   isHost?: boolean;
   /** Current-user live camera stream (host stage + own participant tile). */
   mediaStream?: MediaStream | null;
+  /** Remote stream from the host (shown on the main stage for participants). */
+  hostStream?: MediaStream | null;
+  /** Host camera disabled indicator when viewed by participants. */
+  hostCameraOff?: boolean;
   /** Non-null when getUserMedia failed (permission denied, no device, etc.). */
   mediaError?: string | null;
   /** Real voice-activity state for the current user's voice ripple. */
@@ -96,6 +100,8 @@ export function LiveDuelWorkspaceTemplate({
   isCameraOff,
   isHost = false,
   mediaStream = null,
+  hostStream = null,
+  hostCameraOff,
   mediaError = null,
   isSpeaking = false,
   voiceLevel = 0,
@@ -119,6 +125,8 @@ export function LiveDuelWorkspaceTemplate({
           isCameraOff={isCameraOff}
           isHost={isHost}
           mediaStream={mediaStream}
+          hostStream={hostStream}
+          hostCameraOff={hostCameraOff}
           mediaError={mediaError}
           isSpeaking={isSpeaking}
           voiceLevel={voiceLevel}
