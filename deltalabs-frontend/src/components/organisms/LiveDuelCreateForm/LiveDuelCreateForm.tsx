@@ -125,7 +125,7 @@ export function LiveDuelCreateForm({
   const [difficulty, setDifficulty] = useState<string>(LIVE_DUEL_DIFFICULTIES[1]);
   const [durationLabel, setDurationLabel] = useState<string>(LIVE_DUEL_DURATIONS[0]);
   const [entryFee, setEntryFee] = useState<string>(LIVE_DUEL_ENTRY_FEES[0]);
-  const [prizePool, setPrizePool] = useState("");
+  const [prizeAmount, setPrizeAmount] = useState<string>("0");
   const [playersMax, setPlayersMax] = useState("20");
 
   const playersMaxParsed = Number.parseInt(playersMax, 10);
@@ -133,6 +133,12 @@ export function LiveDuelCreateForm({
     Number.isInteger(playersMaxParsed) && playersMaxParsed >= 2 && playersMaxParsed <= 100;
   const titleValid = title.trim().length > 0;
   const canSubmit = titleValid && playersMaxValid && !isSubmitting;
+
+  const formattedPrizePool = useMemo(() => {
+    const val = Number.parseFloat(prizeAmount);
+    if (!Number.isFinite(val) || val <= 0) return "0 ETB";
+    return `${val.toLocaleString()} ETB`;
+  }, [prizeAmount]);
 
   const previewEntry = useMemo<LiveDuelEntry>(
     () => ({
@@ -147,7 +153,7 @@ export function LiveDuelCreateForm({
       playersJoined: 1,
       playersMax: playersMaxValid ? playersMaxParsed : 20,
       entryFee,
-      prizePool: prizePool.trim() || "0 ETB",
+      prizePool: formattedPrizePool,
       durationLabel,
     }),
     [
@@ -156,7 +162,7 @@ export function LiveDuelCreateForm({
       difficulty,
       durationLabel,
       entryFee,
-      prizePool,
+      formattedPrizePool,
       playersMaxValid,
       playersMaxParsed,
       hostName,
@@ -172,7 +178,7 @@ export function LiveDuelCreateForm({
       difficulty,
       durationLabel,
       entryFee,
-      prizePool: prizePool.trim() || "0 ETB",
+      prizePool: formattedPrizePool,
       playersMax: playersMaxParsed,
       hostName,
       hostAvatarUrl: hostAvatarUrl ?? null,
@@ -419,15 +425,43 @@ export function LiveDuelCreateForm({
               </div>
             </div>
 
-            <Field id="live-duel-prize" label="Prize Pool">
-              <Input
-                id="live-duel-prize"
-                value={prizePool}
-                onChange={(e) => setPrizePool(e.target.value)}
-                placeholder="e.g. 5,000 ETB (or Free)"
-                maxLength={40}
-              />
-            </Field>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <Typography as="span" className="text-xs font-semibold text-text-secondary">
+                  Prize Pool Amount
+                </Typography>
+                <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400">
+                  {formattedPrizePool}
+                </span>
+              </div>
+              <div className="relative">
+                <Input
+                  id="live-duel-prize"
+                  type="number"
+                  min={0}
+                  step={50}
+                  value={prizeAmount}
+                  onChange={(e) => setPrizeAmount(e.target.value)}
+                  placeholder="0"
+                  className="pr-14 font-semibold"
+                />
+                <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-text-tertiary">
+                  ETB
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                {[0, 250, 500, 1000, 2500, 5000].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setPrizeAmount(String(amt))}
+                    className="rounded-md border border-border-default bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-text-secondary transition-colors hover:border-primary-400 hover:text-text-primary"
+                  >
+                    {amt === 0 ? "Free" : `${amt.toLocaleString()} ETB`}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
