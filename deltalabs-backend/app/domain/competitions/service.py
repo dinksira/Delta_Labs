@@ -2074,7 +2074,6 @@ class Service:
                 "Tournament creators cannot play or score in their own tournament.",
                 code="creator_cannot_play",
             )
-        stored = await self._repository.get_active_championship()
         if stored is not None:
             ordered = sorted(
                 (dict(s) for s in stored["stages"]),
@@ -2260,6 +2259,7 @@ class Service:
             "schedule_time": payload.schedule_time,
             "schedule_timezone": payload.schedule_timezone,
             "created_by": user_id,
+            "participants": [],
             "created_at": now,
             "updated_at": now,
         }

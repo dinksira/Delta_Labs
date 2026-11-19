@@ -687,7 +687,31 @@ class Repository:
         return await self._db["championships"].find_one({"_id": "active"})
 
     async def upsert_active_championship(self, doc: dict[str, Any]) -> dict[str, Any] | None:
-        """Stores a new hosted Championship season as the active season."""
+        """Stores a new hosted Championship season as the active season and permanently archives past seasons."""
+        # Archive any existing active championship under its historical season id
+        current = await self._db["championships"].find_one({"_id": "active"})
+        if current and isinstance(current.get("season"), dict) and current["season"].get("id"):
+            prev_season_id = current["season"]["id"]
+            archive_doc = dict(current)
+            archive_doc["_id"] = prev_season_id
+            archive_doc["status"] = "archived"
+            await self._db["championships"].update_one(
+                {"_id": prev_season_id},
+                {"$set": archive_doc},
+                upsert=True,
+            )
+
+        # Also persist the new season under its own unique ID for permanent database record
+        season_id = (doc.get("season") or {}).get("id")
+        if season_id:
+            historical_record = dict(doc)
+            historical_record["_id"] = season_id
+            await self._db["championships"].update_one(
+                {"_id": season_id},
+                {"$set": historical_record},
+                upsert=True,
+            )
+
         await self._db["championships"].update_one(
             {"_id": "active"},
             {"$set": doc},
@@ -700,19 +724,13 @@ class Repository:
 
         Lifetime points are untouched; only the season-scoped ``championship_*``
         fields reset so everyone starts the new season fresh.
-
-        Season earnings are deliberately no longer reset here. They used to be a
-        counter on this document, which meant a new season silently zeroed a
-        money field. Season earnings are now a query over the wallet ledger, so
-        nothing needs wiping. Documents written before this change may still hold
-        a stale ``championship_earnings_etb``; nothing reads it, and unsetting it
-        is left to a deliberate migration rather than smuggled into a season reset.
         """
         now = datetime.now(UTC)
         result = await self._db["competition_user_stats"].update_many(
             {},
             {
                 "$set": {
+                    "championship_joined": False,
                     "championship_completed": [],
                     "championship_points": 0,
                     "updated_at": now,
