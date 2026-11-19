@@ -3105,6 +3105,41 @@ class Service:
         await self._sync_battle_row_after_change(battle_id, user_id)
         return self._repository.doc_to_response(updated, viewer_user_id=user_id)
 
+    async def finish_topic_battle(
+        self,
+        *,
+        battle_id: str,
+        user_id: str,
+    ) -> TopicBattleResponse:
+        """Mark a topic battle as finished by its owner/host.
+
+        Transitions the battle to 'finished' so no further submissions are accepted,
+        and final leaderboard standings are sealed.
+        """
+        await self.bootstrap()
+        doc = await self._require_battle_owner(battle_id, user_id)
+        if doc.get("status") == "finished":
+            return self._repository.doc_to_response(doc, viewer_user_id=user_id)
+
+        now = datetime.now(UTC)
+        updated = await self._repository.patch_topic_battle(
+            battle_id,
+            {
+                "status": "finished",
+                "countdown_ends_at": now.isoformat(),
+                "updated_at": now,
+            },
+        )
+        await self._record_event(
+            entity_type="topic_battle",
+            entity_id=battle_id,
+            event_type="finish",
+            actor_user_id=user_id,
+            detail={"previous_status": doc.get("status")},
+        )
+        await self._sync_battle_row_after_change(battle_id, user_id)
+        return self._repository.doc_to_response(updated, viewer_user_id=user_id)
+
     async def complete_topic_battle(
         self,
         *,

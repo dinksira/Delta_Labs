@@ -119,6 +119,10 @@ export async function quitTopicBattle(id: string) {
   return apiClient.post<QuitTopicBattleResponse>(`/v1/competitions/topic-battles/${id}/quit`);
 }
 
+export async function endTopicBattle(id: string) {
+  return apiClient.post<TopicBattle>(`/v1/competitions/topic-battles/${id}/end`);
+}
+
 export async function fetchBattleParticipants(id: string) {
   return apiClient.get<BattleParticipantsResponse>(`/v1/competitions/topic-battles/${id}/participants`);
 }

@@ -9,6 +9,7 @@ import {
   Gift,
   ListChecks,
   Settings,
+  StopCircle,
   Table2,
   Ticket,
   Trophy,
@@ -21,7 +22,8 @@ import { BattleQuestionsPanel } from "@/components/organisms/BattleQuestionsPane
 import { Button } from "@/components/theme/Button";
 import { Typography } from "@/components/theme/Typography";
 import { CompetitionManagementTableView } from "@/modules/Competition/managementTable/CompetitionManagementTableView";
-import { useTopicBattleLeaderboard } from "@/modules/Competition/hooks";
+import { EndTopicBattleModal } from "@/components/organisms/EndTopicBattleModal";
+import { useTopicBattleLeaderboard, useEndTopicBattle } from "@/modules/Competition/hooks";
 import { getStatusLabel } from "@/modules/Competition/utils";
 import { cn } from "@/lib/utils";
 
@@ -42,9 +44,11 @@ export function TopicBattleHostDashboardTemplate({
 }: Readonly<TopicBattleHostDashboardTemplateProps>) {
   const [activeTab, setActiveTab] = useState<TabType>("participants");
   const [copied, setCopied] = useState(false);
+  const [isEndOpen, setIsEndOpen] = useState(false);
 
   const { entries: leaderboardEntries, isPending: isLeaderboardLoading } =
     useTopicBattleLeaderboard(battle.id, null);
+  const endMutation = useEndTopicBattle();
 
   const handleCopyLink = () => {
     if (typeof window !== "undefined") {
@@ -52,6 +56,13 @@ export function TopicBattleHostDashboardTemplate({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleConfirmEnd = () => {
+    endMutation.mutate(battle.id, {
+      onSuccess: () => setIsEndOpen(false),
+      onError: () => setIsEndOpen(false),
+    });
   };
 
   const participants = participantsResponse?.participants ?? [];
@@ -93,6 +104,17 @@ export function TopicBattleHostDashboardTemplate({
             {copied ? <Check className="size-4 text-success-600" /> : <Copy className="size-4" />}
             <span>{copied ? "Link Copied!" : "Share Battle Link"}</span>
           </Button>
+          {battle.status !== "finished" && battle.status !== "cancelled" ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEndOpen(true)}
+              className="gap-2 border-error-300 text-error-600 hover:border-error-500 hover:bg-error-50 dark:border-error-700 dark:text-error-400 dark:hover:bg-error-950"
+            >
+              <StopCircle className="size-4" />
+              End Competition
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -284,6 +306,14 @@ export function TopicBattleHostDashboardTemplate({
           <CompetitionManagementTableView battleId={battle.id} />
         </div>
       ) : null}
+
+      <EndTopicBattleModal
+        open={isEndOpen}
+        title={battle.title}
+        isPending={endMutation.isPending}
+        onClose={() => setIsEndOpen(false)}
+        onConfirm={handleConfirmEnd}
+      />
     </div>
   );
 }

@@ -20,6 +20,7 @@
 
 import { useMemo } from "react";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/theme/Button";
 import { LeaderboardPanel } from "@/components/organisms/LeaderboardPanel";
 import { QuizBattleHeader } from "@/components/organisms/QuizBattleHeader";
@@ -39,10 +40,14 @@ export interface QuizBattleTemplateProps {
   timeLeftSeconds: number;
   /** Total seconds allocated to the battle. */
   timeTotalSeconds: number;
+  /** Whether the timer has expired for the current question. */
+  timedOut?: boolean;
   /** Locks in the participant answer for the current question. */
   onSubmit?: (answer: ParticipantAnswer) => void;
-  /** Advances to the next question once an answer is revealed. */
+  /** Advances to the next question. */
   onAdvance?: () => void;
+  /** Goes back to the previous question. */
+  onGoBack?: () => void;
   onPlayAgain?: () => void;
   onExit?: () => void;
   onQuit?: () => void;
@@ -55,8 +60,10 @@ export function QuizBattleTemplate({
   timeLeft,
   timeLeftSeconds,
   timeTotalSeconds,
+  timedOut = false,
   onSubmit,
   onAdvance,
+  onGoBack,
   onPlayAgain,
   onExit,
   onQuit,
@@ -125,15 +132,58 @@ export function QuizBattleTemplate({
             revealed={state.isAnswered}
             result={state.lastResult}
             answer={state.answer}
-            onSubmit={submit}
+            onSubmit={timedOut ? undefined : submit}
           />
-          {state.isAnswered ? (
-            <div className="flex justify-end">
-              <Button variant="primary" onClick={onAdvance}>
-                {isLastQuestion ? "See Results" : "Next Question"}
-              </Button>
+
+          {/* Navigation bar — always visible */}
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-border-default bg-surface-default p-3 sm:p-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onGoBack}
+              disabled={state.currentQuestionIndex === 0 || state.isSubmitting}
+              className="gap-1.5"
+            >
+              <ChevronLeft className="size-4" />
+              Previous
+            </Button>
+
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-sm font-bold text-text-primary">
+                {state.currentQuestionIndex + 1}{" "}
+                <span className="font-normal text-text-tertiary">/ {state.totalQuestions}</span>
+              </span>
+              {timedOut && (
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-error-500">
+                  Time&apos;s Up
+                </span>
+              )}
             </div>
-          ) : null}
+
+            {isLastQuestion ? (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={onAdvance}
+                disabled={!state.isAnswered || state.isSubmitting}
+                className="gap-1.5"
+              >
+                See Results
+                <ChevronRight className="size-4" />
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={onAdvance}
+                disabled={state.isSubmitting}
+                className="gap-1.5"
+              >
+                Next
+                <ChevronRight className="size-4" />
+              </Button>
+            )}
+          </div>
           <QuizMetricsRow
             score={state.score}
             rank={rank}

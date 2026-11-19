@@ -230,8 +230,10 @@ export function TopicBattleDuelPage() {
         timeLeft={duel.timeLeft}
         timeLeftSeconds={duel.timeLeftSeconds}
         timeTotalSeconds={duel.totalTimeSeconds}
+        timedOut={duel.timedOut}
         onSubmit={duel.submitAnswer}
         onAdvance={duel.advance}
+        onGoBack={duel.goBack}
         onExit={handleExit}
         onQuit={() => setIsQuitOpen(true)}
       />

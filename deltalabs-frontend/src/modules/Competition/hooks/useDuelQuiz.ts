@@ -90,13 +90,10 @@ export function useDuelQuiz(
     questionShownAt.current = Date.now();
   }, [state.currentQuestionIndex, questionTotalSeconds]);
 
-  const advance = useCallback((force = false) => {
+  const advance = useCallback(() => {
     inFlight.current = false;
     submissionToken.current += 1;
     setState((prev) => {
-      if (!prev.isAnswered && !force) {
-        return prev;
-      }
       const nextIndex = prev.currentQuestionIndex + 1;
       return {
         ...prev,
@@ -107,6 +104,23 @@ export function useDuelQuiz(
         lastResult: null,
       };
     });
+    questionShownAt.current = Date.now();
+  }, []);
+
+  const goBack = useCallback(() => {
+    setState((prev) => {
+      if (prev.currentQuestionIndex <= 0) return prev;
+      return {
+        ...prev,
+        currentQuestionIndex: prev.currentQuestionIndex - 1,
+        answer: null,
+        isAnswered: false,
+        isSubmitting: false,
+        lastResult: null,
+      };
+    });
+    submissionToken.current += 1;
+    inFlight.current = false;
     questionShownAt.current = Date.now();
   }, []);
 
@@ -127,15 +141,10 @@ export function useDuelQuiz(
     return () => clearInterval(timer);
   }, [quiz, finished, state.currentQuestionIndex]);
 
-  // When question timer expires, auto-advance to next question immediately
-  useEffect(() => {
-    if (!quiz || finished) {
-      return;
-    }
-    if (timeLeftSeconds <= 0) {
-      advance(true);
-    }
-  }, [timeLeftSeconds, quiz, finished, advance]);
+  // When question timer expires, lock the question (no auto-advance).
+  // The participant navigates manually via Next / Previous buttons.
+  // timeLeftSeconds === 0 is surfaced to the UI to disable the submit button.
+  const timedOut = !finished && timeLeftSeconds <= 0;
 
   const doSubmit = useCallback(
     async (answer: ParticipantAnswer) => {
@@ -206,8 +215,10 @@ export function useDuelQuiz(
     timeLeft,
     timeLeftSeconds,
     totalTimeSeconds: questionTotalSeconds,
+    timedOut,
     submitAnswer: submit,
-    advance: () => advance(false),
+    advance,
+    goBack,
     reset,
   };
 }

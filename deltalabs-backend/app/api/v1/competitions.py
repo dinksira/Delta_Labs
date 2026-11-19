@@ -328,6 +328,21 @@ async def quit_topic_battle(
     )
 
 
+@router.post("/topic-battles/{battle_id}/end", response_model=TopicBattleResponse)
+async def end_topic_battle(
+    request: Request,
+    battle_id: str,
+    user: CurrentUser = Depends(get_current_user),  # noqa: B008
+    service: CompetitionsService = Depends(_competitions_service),  # noqa: B008
+) -> TopicBattleResponse:
+    """End a topic battle immediately (owner-only)."""
+    await enforce_competition_rate_limits(request, user_id=user.user_id)
+    return await service.finish_topic_battle(
+        battle_id=battle_id,
+        user_id=user.user_id,
+    )
+
+
 @router.get("/topic-battles/{battle_id}/participants", response_model=BattleParticipantsResponse)
 async def get_topic_battle_participants(
     battle_id: str,
