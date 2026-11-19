@@ -111,13 +111,13 @@ export function BattleParticipantRow({ participant, index }: Readonly<BattlePart
           {participant.answers.length === 0 ? (
             <p className="py-2 text-sm text-text-tertiary">No answers submitted yet.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 lg:grid-cols-3">
               {participant.answers.map((ans) => (
                 <div
                   key={ans.questionId}
-                  className="flex items-center justify-between rounded-lg border border-border-default bg-surface-default p-3 text-sm"
+                  className="flex items-center justify-between rounded-lg border border-border-default bg-surface-default p-3 text-sm shadow-sm"
                 >
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     {ans.correct === true ? (
                       <CheckCircle2 className="size-4 shrink-0 text-success-600" />
                     ) : ans.correct === false ? (
@@ -125,10 +125,10 @@ export function BattleParticipantRow({ participant, index }: Readonly<BattlePart
                     ) : (
                       <HelpCircle className="size-4 shrink-0 text-warning-500" />
                     )}
-                    <span className="font-medium text-text-primary">{ans.questionTitle}</span>
+                    <span className="truncate font-medium text-text-primary">{ans.questionTitle}</span>
                   </div>
 
-                  <div className="flex items-center gap-3 text-xs">
+                  <div className="flex items-center gap-2 shrink-0 text-xs">
                     {ans.latencyMs ? (
                       <span className="text-text-tertiary">
                         {(ans.latencyMs / 1000).toFixed(1)}s

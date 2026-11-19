@@ -125,7 +125,7 @@ export function CompetitionDetailPage() {
 
   // ── Participant view ──────────────────────────────────────────────────────
   return (
-    <div className="mx-auto flex h-full max-w-4xl flex-col gap-6 overflow-y-auto p-4 md:p-6">
+    <div className="flex w-full flex-1 flex-col gap-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <button

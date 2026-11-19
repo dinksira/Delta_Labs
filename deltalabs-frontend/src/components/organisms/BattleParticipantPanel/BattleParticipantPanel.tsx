@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Loader2, Sparkles, Users } from "lucide-react";
+import { Activity, CheckCircle2, Loader2, Sparkles, Users } from "lucide-react";
 
 import type { ParticipantDetail } from "@/modules/Competition/types/topicBattle";
 import { BattleParticipantRow } from "@/components/organisms/BattleParticipantRow";
@@ -33,12 +33,15 @@ export function BattleParticipantPanel({
       ? Math.round(participants.reduce((sum, p) => sum + p.totalPoints, 0) / participants.length)
       : 0;
 
+  const completionRate =
+    totalParticipants > 0 ? Math.round((totalCompleted / totalParticipants) * 100) : 0;
+
   return (
-    <div className="flex flex-col gap-5">
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="flex items-center gap-3 rounded-xl border border-border-default bg-surface-default p-4">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
+    <div className="flex w-full flex-col gap-6">
+      {/* Metrics Row - Responsive 4 Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex items-center gap-3.5 rounded-xl border border-border-default bg-surface-default p-4 shadow-sm">
+          <div className="flex size-11 items-center justify-center rounded-xl bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300">
             <Users className="size-5" />
           </div>
           <div>
@@ -51,8 +54,8 @@ export function BattleParticipantPanel({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 rounded-xl border border-border-default bg-surface-default p-4">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-success-100 text-success-600 dark:bg-success-900/40 dark:text-success-300">
+        <div className="flex items-center gap-3.5 rounded-xl border border-border-default bg-surface-default p-4 shadow-sm">
+          <div className="flex size-11 items-center justify-center rounded-xl bg-success-100 text-success-600 dark:bg-success-900/40 dark:text-success-300">
             <CheckCircle2 className="size-5" />
           </div>
           <div>
@@ -65,8 +68,22 @@ export function BattleParticipantPanel({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 rounded-xl border border-border-default bg-surface-default p-4">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-yellow-100 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-300">
+        <div className="flex items-center gap-3.5 rounded-xl border border-border-default bg-surface-default p-4 shadow-sm">
+          <div className="flex size-11 items-center justify-center rounded-xl bg-info-100 text-info-600 dark:bg-info-900/40 dark:text-info-300">
+            <Activity className="size-5" />
+          </div>
+          <div>
+            <Typography variant="small" className="text-text-secondary">
+              Completion Rate
+            </Typography>
+            <Typography className="text-xl font-bold text-text-primary">
+              {completionRate}%
+            </Typography>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3.5 rounded-xl border border-border-default bg-surface-default p-4 shadow-sm">
+          <div className="flex size-11 items-center justify-center rounded-xl bg-yellow-100 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-300">
             <Sparkles className="size-5" />
           </div>
           <div>
@@ -87,12 +104,12 @@ export function BattleParticipantPanel({
         </Typography>
 
         {participants.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border-default bg-surface-default p-8 text-center">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border-default bg-surface-default p-12 text-center">
             <Users className="size-10 text-text-tertiary" />
             <Typography className="mt-2 font-medium text-text-primary">
               No participants have joined yet
             </Typography>
-            <Typography variant="small" className="max-w-sm text-text-secondary">
+            <Typography variant="small" className="max-w-md text-text-secondary">
               When participants join this topic battle, their live status, score, and answers will appear here in real-time.
             </Typography>
           </div>
