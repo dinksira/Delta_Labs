@@ -2813,7 +2813,8 @@ class Service:
             earned = 0
         else:
             correct = grade_stored_question(question, payload.answer)
-            earned = int(float(question.get("points") or 0)) if correct is True else 0
+            pts = question.get("points")
+            earned = int(float(pts if pts is not None and float(pts) > 0 else 100)) if correct is True else 0
 
         inserted = await self._repository.insert_submission(
             battle_id=battle_id,
@@ -3173,16 +3174,6 @@ class Service:
             )
         if user_id in completed_user_ids:
             return self._repository.doc_to_response(doc, viewer_user_id=user_id)
-
-        answered = await self._repository.count_user_submissions(
-            battle_id=battle_id,
-            user_id=user_id,
-        )
-        if answered == 0:
-            raise ConflictError(
-                "Submit at least one answer before finishing the battle.",
-                code="no_submissions",
-            )
 
         updated = await self._repository.mark_topic_battle_completed(battle_id, user_id)
         if updated is None:

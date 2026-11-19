@@ -231,6 +231,7 @@ export function TopicBattleDuelPage() {
         timeLeftSeconds={duel.timeLeftSeconds}
         timeTotalSeconds={duel.totalTimeSeconds}
         timedOut={duel.timedOut}
+        questionReviews={duel.questionReviews}
         onSubmit={duel.submitAnswer}
         onAdvance={duel.advance}
         onGoBack={duel.goBack}

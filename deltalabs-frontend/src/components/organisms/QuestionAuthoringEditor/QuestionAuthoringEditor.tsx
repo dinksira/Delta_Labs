@@ -18,7 +18,7 @@
  * molecules and theme atoms.
  */
 
-import { ArrowDown, ArrowUp, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, Plus } from "lucide-react";
 import { useEffect, useMemo } from "react";
 
 import { BlankAnswerList } from "@/components/molecules/BlankAnswerList/BlankAnswerList";
@@ -70,29 +70,53 @@ function TrueFalseBody({
   question: CodingQuestion;
   onChange: QuestionAuthoringEditorProps["onChange"];
 }>) {
-  const rows: { label: string; active: boolean }[] = [
-    { label: "True", active: question.tfAnswer === true },
-    { label: "False", active: question.tfAnswer !== true },
-  ];
+  const isTrue = question.tfAnswer === true;
 
   return (
-    <div className="flex flex-col gap-2">
-      <Typography as="h3" className="text-sm font-bold text-primary-700">
-        Correct answer
-      </Typography>
-      {rows.map((row) => (
-        <div
-          key={row.label}
-          className="flex items-center justify-between gap-3 rounded-xl border border-border-default bg-surface-default px-4 py-3"
+    <div className="flex flex-col gap-2.5">
+      <div className="flex items-center justify-between">
+        <Typography as="h3" className="text-sm font-bold text-primary-700">
+          Correct Answer
+        </Typography>
+        <span className="text-xs text-text-secondary">
+          Click the card that represents the correct statement
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => onChange({ tfAnswer: true })}
+          className={cn(
+            "flex items-center justify-between rounded-xl border p-4 text-left transition-all",
+            isTrue
+              ? "border-success-500 bg-success-50/70 text-success-900 shadow-sm ring-2 ring-success-500/20"
+              : "border-border-default bg-surface-default hover:border-primary-300",
+          )}
         >
-          <Typography className="text-sm font-semibold text-text-primary">{row.label}</Typography>
-          <Switch
-            label={`Set correct answer to ${row.label}`}
-            checked={row.active}
-            onCheckedChange={() => onChange({ tfAnswer: row.label === "True" })}
-          />
-        </div>
-      ))}
+          <div>
+            <Typography className="text-base font-bold text-text-primary">True</Typography>
+            <span className="text-xs text-text-secondary">Statement is accurate</span>
+          </div>
+          {isTrue && <CheckCircle2 className="size-5 text-success-600 shrink-0" />}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onChange({ tfAnswer: false })}
+          className={cn(
+            "flex items-center justify-between rounded-xl border p-4 text-left transition-all",
+            !isTrue
+              ? "border-success-500 bg-success-50/70 text-success-900 shadow-sm ring-2 ring-success-500/20"
+              : "border-border-default bg-surface-default hover:border-primary-300",
+          )}
+        >
+          <div>
+            <Typography className="text-base font-bold text-text-primary">False</Typography>
+            <span className="text-xs text-text-secondary">Statement is inaccurate</span>
+          </div>
+          {!isTrue && <CheckCircle2 className="size-5 text-success-600 shrink-0" />}
+        </button>
+      </div>
     </div>
   );
 }
@@ -143,12 +167,14 @@ function MultipleChoiceBody({
             })
           }
           onSelect={() => onChange({ mcqCorrectId: option.id })}
-          onRemove={() =>
+          onRemove={() => {
+            const remaining = question.mcqOptions.filter((o) => o.id !== option.id);
             onChange({
-              mcqOptions: question.mcqOptions.filter((o) => o.id !== option.id),
-              mcqCorrectId: question.mcqCorrectId === option.id ? "" : question.mcqCorrectId,
-            })
-          }
+              mcqOptions: remaining,
+              mcqCorrectId:
+                question.mcqCorrectId === option.id ? (remaining[0]?.id ?? "") : question.mcqCorrectId,
+            });
+          }}
         />
       ))}
     </div>

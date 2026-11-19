@@ -157,6 +157,7 @@ export function createEmptyOrderItem(): QuestionOrderItem {
 }
 
 export function createEmptyQuestion(overrides?: Partial<CodingQuestion>): CodingQuestion {
+  const defaultOptions = ["A", "B", "C"].map((label) => createEmptyOption(label));
   return {
     id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
     title: "",
@@ -186,8 +187,8 @@ export function createEmptyQuestion(overrides?: Partial<CodingQuestion>): Coding
       },
     ],
     kind: "coding",
-    mcqOptions: ["A", "B", "C"].map((label) => createEmptyOption(label)),
-    mcqCorrectId: "",
+    mcqOptions: defaultOptions,
+    mcqCorrectId: defaultOptions[0]?.id ?? "",
     tfAnswer: true,
     fillExpected: "",
     fillAnswers: [],

@@ -29,6 +29,7 @@ import { QuizQuestionCard } from "@/components/organisms/QuizQuestionCard";
 import { QuizResultsPanel } from "@/components/organisms/QuizResultsPanel";
 import { mergeLiveLeaderboard } from "@/modules/Competition/data";
 import type { DuelQuiz, DuelState, ParticipantAnswer } from "@/modules/Competition/types/duelQuiz";
+import type { QuestionReviewItem } from "@/modules/Competition/hooks/useDuelQuiz";
 import { cn } from "@/lib/utils";
 
 export interface QuizBattleTemplateProps {
@@ -42,6 +43,8 @@ export interface QuizBattleTemplateProps {
   timeTotalSeconds: number;
   /** Whether the timer has expired for the current question. */
   timedOut?: boolean;
+  /** Question review items with per-question correctness & points. */
+  questionReviews?: QuestionReviewItem[];
   /** Locks in the participant answer for the current question. */
   onSubmit?: (answer: ParticipantAnswer) => void;
   /** Advances to the next question. */
@@ -61,6 +64,7 @@ export function QuizBattleTemplate({
   timeLeftSeconds,
   timeTotalSeconds,
   timedOut = false,
+  questionReviews = [],
   onSubmit,
   onAdvance,
   onGoBack,
@@ -105,6 +109,7 @@ export function QuizBattleTemplate({
           correctCount={state.correctCount}
           total={state.totalQuestions}
           rank={rank}
+          questionReviews={questionReviews}
           onPlayAgain={onPlayAgain}
           onExit={onExit}
         />

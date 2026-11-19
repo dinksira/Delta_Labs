@@ -34,6 +34,26 @@ function formatTimeLeft(totalSeconds: number): string {
   return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 }
 
+export interface QuestionSubmissionRecord {
+  questionId: string;
+  answer: ParticipantAnswer;
+  isAnswered: boolean;
+  result: boolean | null;
+  earnedPoints: number;
+}
+
+export interface QuestionReviewItem {
+  id: string;
+  index: number;
+  title: string;
+  kind: string;
+  points: number;
+  isAnswered: boolean;
+  result: boolean | null;
+  earnedPoints: number;
+  answer: ParticipantAnswer | null;
+}
+
 function emptyState(totalQuestions: number): DuelState {
   return {
     currentQuestionIndex: 0,
@@ -55,6 +75,7 @@ export function useDuelQuiz(
 ) {
   const totalQuestions = quiz?.questions.length ?? 0;
   const [state, setState] = useState<DuelState>(() => emptyState(totalQuestions));
+  const [submissions, setSubmissions] = useState<Record<string, QuestionSubmissionRecord>>({});
 
   const currentQuestion = quiz?.questions[state.currentQuestionIndex];
 
@@ -82,6 +103,7 @@ export function useDuelQuiz(
   // Reset when quiz changes
   useEffect(() => {
     setState(emptyState(totalQuestions));
+    setSubmissions({});
   }, [totalQuestions]);
 
   // Reset question timer and shown timestamp when question index changes
@@ -95,34 +117,39 @@ export function useDuelQuiz(
     submissionToken.current += 1;
     setState((prev) => {
       const nextIndex = prev.currentQuestionIndex + 1;
+      const targetQ = quiz?.questions[nextIndex];
+      const saved = targetQ ? submissions[targetQ.id] : undefined;
       return {
         ...prev,
         currentQuestionIndex: nextIndex,
-        answer: null,
-        isAnswered: false,
+        answer: saved ? saved.answer : null,
+        isAnswered: Boolean(saved?.isAnswered),
         isSubmitting: false,
-        lastResult: null,
+        lastResult: saved ? saved.result : null,
       };
     });
     questionShownAt.current = Date.now();
-  }, []);
+  }, [quiz?.questions, submissions]);
 
   const goBack = useCallback(() => {
     setState((prev) => {
       if (prev.currentQuestionIndex <= 0) return prev;
+      const prevIndex = prev.currentQuestionIndex - 1;
+      const targetQ = quiz?.questions[prevIndex];
+      const saved = targetQ ? submissions[targetQ.id] : undefined;
       return {
         ...prev,
-        currentQuestionIndex: prev.currentQuestionIndex - 1,
-        answer: null,
-        isAnswered: false,
+        currentQuestionIndex: prevIndex,
+        answer: saved ? saved.answer : null,
+        isAnswered: Boolean(saved?.isAnswered),
         isSubmitting: false,
-        lastResult: null,
+        lastResult: saved ? saved.result : null,
       };
     });
     submissionToken.current += 1;
     inFlight.current = false;
     questionShownAt.current = Date.now();
-  }, []);
+  }, [quiz?.questions, submissions]);
 
   // Per-question countdown timer
   useEffect(() => {
@@ -167,6 +194,17 @@ export function useDuelQuiz(
         if (token !== submissionToken.current) {
           return;
         }
+
+        // Store into per-question records for review & persistence across navigation
+        const record: QuestionSubmissionRecord = {
+          questionId: question.id,
+          answer,
+          isAnswered: true,
+          result: result.correct,
+          earnedPoints: result.earnedPoints,
+        };
+        setSubmissions((prev) => ({ ...prev, [question.id]: record }));
+
         setState((prev) => {
           if (prev.currentQuestionIndex !== state.currentQuestionIndex) {
             return prev;
@@ -204,11 +242,30 @@ export function useDuelQuiz(
   const reset = useCallback(() => {
     submissionToken.current += 1;
     setState(emptyState(totalQuestions));
+    setSubmissions({});
     setTimeLeftSeconds(questionTotalSeconds);
     questionShownAt.current = Date.now();
   }, [totalQuestions, questionTotalSeconds]);
 
   const timeLeft = useMemo(() => formatTimeLeft(timeLeftSeconds), [timeLeftSeconds]);
+
+  const questionReviews = useMemo<QuestionReviewItem[]>(() => {
+    if (!quiz) return [];
+    return quiz.questions.map((q, idx) => {
+      const sub = submissions[q.id];
+      return {
+        id: q.id,
+        index: idx,
+        title: q.text,
+        kind: q.kind,
+        points: q.points || 100,
+        isAnswered: Boolean(sub?.isAnswered),
+        result: sub?.result ?? null,
+        earnedPoints: sub?.earnedPoints ?? 0,
+        answer: sub?.answer ?? null,
+      };
+    });
+  }, [quiz, submissions]);
 
   return {
     state,
@@ -216,6 +273,8 @@ export function useDuelQuiz(
     timeLeftSeconds,
     totalTimeSeconds: questionTotalSeconds,
     timedOut,
+    submissions,
+    questionReviews,
     submitAnswer: submit,
     advance,
     goBack,

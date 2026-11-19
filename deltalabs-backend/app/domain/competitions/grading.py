@@ -45,23 +45,32 @@ def stored_question_to_grader_shape(question: dict[str, Any]) -> dict[str, Any]:
     }
 
     for stored_key, grader_key in _SCALAR_KEY_MAP.items():
-        if stored_key in question:
+        if stored_key in question and question[stored_key] is not None:
             grader_shape[grader_key] = question[stored_key]
+        elif grader_key in question and question[grader_key] is not None:
+            grader_shape[grader_key] = question[grader_key]
+
+    # Pass along options for label/text matching fallback
+    opts = question.get("mcq_options") or question.get("mcqOptions") or []
+    if opts:
+        grader_shape["mcqOptions"] = opts
 
     # `matching_pairs` persists `answer_id`; the grader reads `answerId`.
+    pairs = question.get("matching_pairs") or question.get("matchingPairs") or []
     grader_shape["matchingPairs"] = [
         {
             "id": pair.get("id"),
-            "answerId": pair.get("answer_id", pair.get("answerId")),
+            "answerId": pair.get("answer_id") or pair.get("answerId"),
         }
-        for pair in question.get("matching_pairs", [])
+        for pair in pairs
         if isinstance(pair, dict)
     ]
 
     # The grader compares authored item ids against the submitted order.
+    items = question.get("ordering_items") or question.get("orderingItems") or []
     grader_shape["orderingItems"] = [
         {"id": item.get("id")}
-        for item in question.get("ordering_items", [])
+        for item in items
         if isinstance(item, dict)
     ]
 

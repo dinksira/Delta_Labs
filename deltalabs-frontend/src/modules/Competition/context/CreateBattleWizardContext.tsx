@@ -357,31 +357,37 @@ export function CreateBattleWizardProvider({
 
     const questions =
       draft.questionPool.mode === "custom"
-        ? draft.customQuestions.map((q) => ({
-            id: q.id,
-            title: q.title,
-            description: q.description,
-            constraints: q.constraints,
-            codeTemplate: q.codeTemplate,
-            language: q.language,
-            difficulty: q.difficulty,
-            timeLimitMinutes: q.timeLimitMinutes,
-            points: q.points,
-            hintEnabled: q.hintEnabled,
-            hintText: q.hintText,
-            testCases: q.testCases,
-            kind: q.kind,
-            mcqOptions: q.mcqOptions,
-            mcqCorrectId: q.mcqCorrectId,
-            tfAnswer: q.tfAnswer,
-            fillExpected: q.fillExpected,
-            fillAnswers: q.fillAnswers,
-            matchingAnswers: q.matchingAnswers,
-            matchingPairs: q.matchingPairs,
-            orderingItems: q.orderingItems,
-            markdown: q.markdown,
-            design: q.design,
-          }))
+        ? draft.customQuestions.map((q) => {
+            let mcqCorrectId = q.mcqCorrectId;
+            if (q.kind === "multiple_choice" && (!mcqCorrectId || !q.mcqOptions.some((o) => o.id === mcqCorrectId))) {
+              mcqCorrectId = q.mcqOptions[0]?.id ?? "";
+            }
+            return {
+              id: q.id,
+              title: q.title,
+              description: q.description,
+              constraints: q.constraints,
+              codeTemplate: q.codeTemplate,
+              language: q.language,
+              difficulty: q.difficulty,
+              timeLimitMinutes: q.timeLimitMinutes,
+              points: q.points && q.points > 0 ? q.points : 100,
+              hintEnabled: q.hintEnabled,
+              hintText: q.hintText,
+              testCases: q.testCases,
+              kind: q.kind,
+              mcqOptions: q.mcqOptions,
+              mcqCorrectId,
+              tfAnswer: Boolean(q.tfAnswer),
+              fillExpected: q.fillExpected,
+              fillAnswers: q.fillAnswers,
+              matchingAnswers: q.matchingAnswers,
+              matchingPairs: q.matchingPairs,
+              orderingItems: q.orderingItems,
+              markdown: q.markdown,
+              design: q.design,
+            };
+          })
         : [];
 
     const formatMinutes: Record<string, number> = {
