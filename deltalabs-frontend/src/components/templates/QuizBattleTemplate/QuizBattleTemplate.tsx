@@ -165,7 +165,7 @@ export function QuizBattleTemplate({
                 variant="primary"
                 size="sm"
                 onClick={onAdvance}
-                disabled={!state.isAnswered || state.isSubmitting}
+                disabled={state.isSubmitting}
                 className="gap-1.5"
               >
                 See Results
