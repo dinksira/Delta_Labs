@@ -1,4 +1,4 @@
-﻿/**
+/**
  * duelQuiz types
  * TypeScript definitions for the post-join topic battle duel.
  *
@@ -63,6 +63,8 @@ interface DuelQuestionBase {
   difficulty: string;
   points: number;
   hint?: string;
+  /** Per-question duration in seconds, configured by the host. */
+  timeLimitSeconds?: number;
 }
 
 export type DuelQuestion =

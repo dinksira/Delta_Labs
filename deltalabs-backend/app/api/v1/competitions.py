@@ -8,6 +8,7 @@ from app.core.rate_limit import client_ip_for_rate_limit, enforce_competition_ra
 from app.domain.competitions.executor import CodeExecutor
 from app.domain.competitions.repository import Repository as CompetitionsRepository
 from app.domain.competitions.schemas import (
+    BattleParticipantsResponse,
     ChampionshipCreateRequest,
     ChampionshipResponse,
     CodeExecuteRequest,
@@ -19,6 +20,7 @@ from app.domain.competitions.schemas import (
     CompetitionModeResponse,
     IntegrityEventRequest,
     IntegrityEventResponse,
+    QuitTopicBattleResponse,
     TopicBattleAnswerRequest,
     TopicBattleAnswerResponse,
     TopicBattleCreateRequest,
@@ -306,6 +308,34 @@ async def complete_topic_battle(
 ) -> TopicBattleResponse:
     await enforce_competition_rate_limits(request, user_id=user.user_id)
     return await service.complete_topic_battle(
+        battle_id=battle_id,
+        user_id=user.user_id,
+    )
+
+
+@router.post("/topic-battles/{battle_id}/quit", response_model=QuitTopicBattleResponse)
+async def quit_topic_battle(
+    request: Request,
+    battle_id: str,
+    user: CurrentUser = Depends(get_current_user),  # noqa: B008
+    service: CompetitionsService = Depends(_competitions_service),  # noqa: B008
+) -> QuitTopicBattleResponse:
+    """Leave a topic battle that the current user has joined."""
+    await enforce_competition_rate_limits(request, user_id=user.user_id)
+    return await service.quit_topic_battle(
+        battle_id=battle_id,
+        user_id=user.user_id,
+    )
+
+
+@router.get("/topic-battles/{battle_id}/participants", response_model=BattleParticipantsResponse)
+async def get_topic_battle_participants(
+    battle_id: str,
+    user: CurrentUser = Depends(get_current_user),  # noqa: B008
+    service: CompetitionsService = Depends(_competitions_service),  # noqa: B008
+) -> BattleParticipantsResponse:
+    """Fetch participant details, join timestamps, and per-question answer breakdown (owner-only)."""
+    return await service.get_battle_participants(
         battle_id=battle_id,
         user_id=user.user_id,
     )

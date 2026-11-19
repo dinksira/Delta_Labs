@@ -345,7 +345,7 @@ export function CreateBattleWizardProvider({
     dispatch({ type: "RESET" });
   }, []);
 
-  const submitBattle = useCallback(async (): Promise<{ ok: boolean; message?: string }> => {
+  const submitBattle = useCallback(async (): Promise<{ ok: boolean; battleId?: string; message?: string }> => {
     const { draft } = state;
     const entryFee =
       draft.entrySetup.fee === "Free"
@@ -395,7 +395,7 @@ export function CreateBattleWizardProvider({
       draft.topic.difficulty || (draft.questionPool.mode === "auto" ? "Mixed" : "Custom");
 
     try {
-      await createTopicBattle({
+      const created = await createTopicBattle({
         title: draft.topic.name,
         subject: draft.topic.category,
         difficulty: battleDifficulty,
@@ -417,7 +417,7 @@ export function CreateBattleWizardProvider({
         hardPct: draft.questionPool.hardPct,
         questions,
       });
-      return { ok: true };
+      return { ok: true, battleId: created.id };
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Failed to create battle. Please try again.";

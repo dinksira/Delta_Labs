@@ -157,9 +157,26 @@ class Repository:
             {
                 "$addToSet": {"participants": user_id},
                 "$inc": {"players_joined": 1},
-                "$set": {"updated_at": now},
+                "$set": {
+                    "updated_at": now,
+                    f"participant_started_at.{user_id}": now,
+                },
             },
             session=session,
+        )
+        return await self.find_topic_battle_by_id(battle_id)
+
+    async def remove_participant(self, battle_id: str, user_id: str) -> dict[str, Any] | None:
+        """Remove a participant from a topic battle when they quit."""
+        now = datetime.now(UTC)
+        await self._db["topic_battles"].update_one(
+            {"_id": battle_id, "participants": user_id},
+            {
+                "$pull": {"participants": user_id},
+                "$inc": {"players_joined": -1},
+                "$unset": {f"participant_started_at.{user_id}": ""},
+                "$set": {"updated_at": now},
+            },
         )
         return await self.find_topic_battle_by_id(battle_id)
 
@@ -373,7 +390,10 @@ class Repository:
             {
                 "$addToSet": {"participants": user_id},
                 "$inc": {"players_joined": 1},
-                "$set": {"updated_at": now},
+                "$set": {
+                    "updated_at": now,
+                    f"participant_started_at.{user_id}": now,
+                },
             },
             session=session,
         )
@@ -499,6 +519,15 @@ class Repository:
             {"battle_id": battle_id, "user_id": user_id},
         )
         return await cursor.to_list(length=1000)
+
+    async def find_all_submissions_for_battle(
+        self,
+        battle_id: str,
+    ) -> list[dict[str, Any]]:
+        cursor = self._db["competition_submissions"].find(
+            {"battle_id": battle_id},
+        ).sort("submitted_at", ASCENDING)
+        return await cursor.to_list(length=5000)
 
     async def find_user_latencies(
         self,

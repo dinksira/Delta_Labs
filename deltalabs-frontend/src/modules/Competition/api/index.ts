@@ -5,6 +5,8 @@ import type { ChampionshipApiResponse } from "@/modules/Competition/types/champi
 import type { CreateChampionshipPayload } from "@/modules/Competition/types/championship";
 import type { CompetitionGamesResponse } from "@/modules/Competition/types/games";
 import type {
+  BattleParticipantsResponse,
+  QuitTopicBattleResponse,
   TopicBattle,
   TopicBattleLeaderboard,
   TopicBattleList,
@@ -111,6 +113,14 @@ export async function fetchTopicBattleLeaderboard(id: string) {
 
 export async function joinTopicBattle(id: string) {
   return apiClient.post<TopicBattle>(`/v1/competitions/topic-battles/${id}/join`);
+}
+
+export async function quitTopicBattle(id: string) {
+  return apiClient.post<QuitTopicBattleResponse>(`/v1/competitions/topic-battles/${id}/quit`);
+}
+
+export async function fetchBattleParticipants(id: string) {
+  return apiClient.get<BattleParticipantsResponse>(`/v1/competitions/topic-battles/${id}/participants`);
 }
 
 /**

@@ -288,6 +288,7 @@ function CreateBattleTopicWizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showCreatedModal, setShowCreatedModal] = useState(false);
+  const [createdBattleId, setCreatedBattleId] = useState<string | null>(null);
   const [showQuestionBuilder, setShowQuestionBuilder] = useState(false);
   const [customTopics, setCustomTopics] = useState<BattleTopic[]>([]);
 
@@ -376,6 +377,9 @@ function CreateBattleTopicWizard() {
     const result = await submitBattle();
     setIsSubmitting(false);
     if (result.ok) {
+      if (result.battleId) {
+        setCreatedBattleId(result.battleId);
+      }
       setShowCreatedModal(true);
     } else {
       setSubmitError(result.message ?? "Failed to create battle. Please try again.");
@@ -440,7 +444,11 @@ function CreateBattleTopicWizard() {
         onClose={() => setShowCreatedModal(false)}
         onManageBattle={() => {
           setShowCreatedModal(false);
-          handleBack();
+          if (createdBattleId) {
+            router.push(`/features/competitions/${createdBattleId}`);
+          } else {
+            handleBack();
+          }
         }}
         battleDetails={battleDetails}
       />

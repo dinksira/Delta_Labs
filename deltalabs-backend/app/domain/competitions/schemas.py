@@ -431,6 +431,48 @@ class TopicBattleLeaderboardResponse(BaseModel):
     total_completed: int = Field(**_alias("totalCompleted"))
 
 
+class ParticipantAnswerDetail(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    question_id: str = Field(**_alias("questionId"))
+    question_title: str = Field(default="", **_alias("questionTitle"))
+    correct: bool | None = None
+    earned_points: int = Field(default=0, **_alias("earnedPoints"))
+    submitted_at: datetime | None = Field(default=None, **_alias("submittedAt"))
+    latency_ms: int | None = Field(default=None, **_alias("latencyMs"))
+
+
+class ParticipantDetail(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    user_id: str = Field(**_alias("userId"))
+    name: str = Field(default="Participant")
+    avatar_url: str | None = Field(default=None, **_alias("avatarUrl"))
+    joined_at: datetime | None = Field(default=None, **_alias("joinedAt"))
+    has_completed: bool = Field(default=False, **_alias("hasCompleted"))
+    total_points: int = Field(default=0, **_alias("totalPoints"))
+    correct_count: int = Field(default=0, **_alias("correctCount"))
+    answered_count: int = Field(default=0, **_alias("answeredCount"))
+    answers: list[ParticipantAnswerDetail] = Field(default_factory=list)
+
+
+class BattleParticipantsResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    battle_id: str = Field(**_alias("battleId"))
+    participants: list[ParticipantDetail] = Field(default_factory=list)
+    total_participants: int = Field(default=0, **_alias("totalParticipants"))
+    total_completed: int = Field(default=0, **_alias("totalCompleted"))
+
+
+class QuitTopicBattleResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    battle_id: str = Field(**_alias("battleId"))
+    quit: bool = True
+
+
+
 class CompetitionModeResponse(BaseModel):
     """A competition game mode card shown on the hub."""
 

@@ -45,6 +45,7 @@ export interface QuizBattleTemplateProps {
   onAdvance?: () => void;
   onPlayAgain?: () => void;
   onExit?: () => void;
+  onQuit?: () => void;
   className?: string;
 }
 
@@ -58,6 +59,7 @@ export function QuizBattleTemplate({
   onAdvance,
   onPlayAgain,
   onExit,
+  onQuit,
   className,
 }: Readonly<QuizBattleTemplateProps>) {
   const finished = state.totalQuestions > 0 && state.currentQuestionIndex >= state.totalQuestions;
@@ -111,6 +113,7 @@ export function QuizBattleTemplate({
         players={quiz.playerCount}
         timeProgress={timeProgress}
         timeLeft={timeLeft}
+        onQuit={onQuit}
       />
 
       <div className="flex flex-col gap-5 lg:flex-row">

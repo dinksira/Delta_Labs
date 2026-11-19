@@ -21,7 +21,9 @@ import {
 
 import { Button } from "@/components/theme/Button";
 import { Typography } from "@/components/theme/Typography";
+import { TopicBattleHostDashboardTemplate } from "@/components/templates/TopicBattleHostDashboardTemplate";
 import { fetchTopicBattle } from "@/modules/Competition/api";
+import { useTopicBattleParticipants } from "@/modules/Competition/hooks";
 import { topicBattleQueryKeys } from "@/modules/Competition/hooks/topicBattleQueryKeys";
 import { useJoinTopicBattle } from "@/modules/Competition/hooks/useJoinTopicBattle";
 import { CompetitionManagementTableView } from "@/modules/Competition/managementTable/CompetitionManagementTableView";
@@ -63,6 +65,11 @@ export function CompetitionDetailPage() {
     queryKey: topicBattleQueryKeys.detail(battleId),
     queryFn: () => fetchTopicBattle(battleId),
   });
+
+  const { data: participantsData, isPending: isParticipantsPending } = useTopicBattleParticipants(
+    battleId,
+    Boolean(battle?.isOwner),
+  );
 
   const joinMutation = useJoinTopicBattle();
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -106,6 +113,17 @@ export function CompetitionDetailPage() {
           Browse competitions
         </Button>
       </div>
+    );
+  }
+
+  if (battle.isOwner) {
+    return (
+      <TopicBattleHostDashboardTemplate
+        battle={battle}
+        participantsResponse={participantsData}
+        isParticipantsLoading={isParticipantsPending}
+        onBack={handleBack}
+      />
     );
   }
 

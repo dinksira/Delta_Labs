@@ -18,7 +18,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,6 +26,7 @@ import { ArrowLeft, CheckCircle2, Loader2, Settings2 } from "lucide-react";
 
 import { Button } from "@/components/theme/Button";
 import { QuizBattleTemplate } from "@/components/templates/QuizBattleTemplate";
+import { QuitTopicBattleModal } from "@/components/organisms/QuitTopicBattleModal";
 import { useAuthSession } from "@/contexts/AuthSession_Context";
 import {
   completeTopicBattle,
@@ -33,7 +34,11 @@ import {
   submitTopicBattleAnswer,
 } from "@/modules/Competition/api";
 import { buildDuelQuiz } from "@/modules/Competition/data";
-import { topicBattleQueryKeys, useTopicBattleLeaderboard } from "@/modules/Competition/hooks";
+import {
+  topicBattleQueryKeys,
+  useQuitTopicBattle,
+  useTopicBattleLeaderboard,
+} from "@/modules/Competition/hooks";
 import { useDuelQuiz } from "@/modules/Competition/hooks/useDuelQuiz";
 import { useIntegrityMonitor } from "@/modules/Competition/hooks/useIntegrityMonitor";
 import type { ParticipantAnswer } from "@/modules/Competition/types/duelQuiz";
@@ -45,6 +50,8 @@ export function TopicBattleDuelPage() {
   const { isAuthenticated, session } = useAuthSession();
   const currentUserId = session?.user?.id ?? null;
   const queryClient = useQueryClient();
+  const [isQuitOpen, setIsQuitOpen] = useState(false);
+  const quitMutation = useQuitTopicBattle();
 
   const {
     data: battle,
@@ -121,7 +128,21 @@ export function TopicBattleDuelPage() {
   };
 
   const handleExit = () => {
-    router.push("/features/competitions/topic-battles");
+    setIsQuitOpen(true);
+  };
+
+  const handleConfirmQuit = () => {
+    quitMutation.mutate(battleId, {
+      onSuccess: () => {
+        setIsQuitOpen(false);
+        router.push("/features/competitions/topic-battles");
+      },
+      onError: () => {
+        // Fallback navigation if already removed
+        setIsQuitOpen(false);
+        router.push("/features/competitions/topic-battles");
+      },
+    });
   };
 
   if (isPending) {
@@ -202,16 +223,26 @@ export function TopicBattleDuelPage() {
   }
 
   return (
-    <QuizBattleTemplate
-      quiz={quiz}
-      state={duel.state}
-      timeLeft={duel.timeLeft}
-      timeLeftSeconds={duel.timeLeftSeconds}
-      timeTotalSeconds={duel.totalTimeSeconds}
-      onSubmit={duel.submitAnswer}
-      onAdvance={duel.advance}
-      onExit={handleExit}
-    />
+    <>
+      <QuizBattleTemplate
+        quiz={quiz}
+        state={duel.state}
+        timeLeft={duel.timeLeft}
+        timeLeftSeconds={duel.timeLeftSeconds}
+        timeTotalSeconds={duel.totalTimeSeconds}
+        onSubmit={duel.submitAnswer}
+        onAdvance={duel.advance}
+        onExit={handleExit}
+        onQuit={() => setIsQuitOpen(true)}
+      />
+      <QuitTopicBattleModal
+        open={isQuitOpen}
+        title={battle.title}
+        isPending={quitMutation.isPending}
+        onClose={() => setIsQuitOpen(false)}
+        onConfirm={handleConfirmQuit}
+      />
+    </>
   );
 }
 

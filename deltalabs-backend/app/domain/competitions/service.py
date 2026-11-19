@@ -15,6 +15,7 @@ from app.domain.competitions.grading import grade_stored_question
 from app.domain.competitions.repository import Repository
 from app.domain.competitions.schemas import (
     AchievementResponse,
+    BattleParticipantsResponse,
     ChampionshipCreateRequest,
     ChampionshipNextSeasonResponse,
     ChampionshipResponse,
@@ -30,6 +31,9 @@ from app.domain.competitions.schemas import (
     IntegrityEventRequest,
     IntegrityEventResponse,
     MarkdownPayloadSchema,
+    ParticipantAnswerDetail,
+    ParticipantDetail,
+    QuitTopicBattleResponse,
     TopicBattleAnswerRequest,
     TopicBattleAnswerResponse,
     TopicBattleCreateRequest,
@@ -3157,6 +3161,112 @@ class Service:
         )
         await self._sync_battle_row_after_change(battle_id, user_id)
         return self._repository.doc_to_response(updated, viewer_user_id=user_id)
+
+    async def get_battle_participants(
+        self,
+        *,
+        battle_id: str,
+        user_id: str,
+    ) -> BattleParticipantsResponse:
+        """Fetch all participants with join times and per-question answer breakdowns (owner-only)."""
+        await self.bootstrap()
+        doc = await self._require_battle_owner(battle_id, user_id)
+
+        participant_ids = [str(uid) for uid in doc.get("participants", [])]
+        completed_set = {str(uid) for uid in doc.get("completed_user_ids", [])}
+        started_at_map = doc.get("participant_started_at", {}) or {}
+
+        questions = doc.get("questions", []) or []
+        question_title_map = {
+            str(q.get("id", "")): str(q.get("title") or q.get("description") or "Question")
+            for q in questions
+        }
+
+        profiles = await self._repository.find_user_profiles(participant_ids) if participant_ids else {}
+        all_submissions = await self._repository.find_all_submissions_for_battle(battle_id) if participant_ids else []
+
+        subs_by_user: dict[str, list[dict[str, Any]]] = {}
+        for sub in all_submissions:
+            sub_uid = str(sub.get("user_id", ""))
+            subs_by_user.setdefault(sub_uid, []).append(sub)
+
+        participant_details: list[ParticipantDetail] = []
+        for uid in participant_ids:
+            prof = profiles.get(uid, {})
+            user_subs = subs_by_user.get(uid, [])
+
+            answers: list[ParticipantAnswerDetail] = []
+            for s in user_subs:
+                qid = str(s.get("question_id", ""))
+                answers.append(
+                    ParticipantAnswerDetail(
+                        question_id=qid,
+                        question_title=question_title_map.get(qid, "Question"),
+                        correct=s.get("correct"),
+                        earned_points=int(s.get("earned_points") or 0),
+                        submitted_at=s.get("submitted_at"),
+                        latency_ms=s.get("latency_ms"),
+                    )
+                )
+
+            total_points = sum(a.earned_points for a in answers)
+            correct_count = sum(1 for a in answers if a.correct is True)
+            answered_count = len(answers)
+            joined_dt = started_at_map.get(uid)
+
+            participant_details.append(
+                ParticipantDetail(
+                    user_id=uid,
+                    name=str(prof.get("name") or "Participant"),
+                    avatar_url=prof.get("avatar_url"),
+                    joined_at=joined_dt,
+                    has_completed=uid in completed_set,
+                    total_points=total_points,
+                    correct_count=correct_count,
+                    answered_count=answered_count,
+                    answers=answers,
+                )
+            )
+
+        participant_details.sort(key=lambda p: (-p.total_points, -(p.correct_count)))
+
+        return BattleParticipantsResponse(
+            battle_id=battle_id,
+            participants=participant_details,
+            total_participants=len(participant_ids),
+            total_completed=len(completed_set.intersection(set(participant_ids))),
+        )
+
+    async def quit_topic_battle(
+        self,
+        *,
+        battle_id: str,
+        user_id: str,
+    ) -> QuitTopicBattleResponse:
+        """Leave a topic battle that the user has joined."""
+        await self.bootstrap()
+        doc = await self._repository.find_topic_battle_by_id(battle_id)
+        if doc is None:
+            raise NotFoundError("Topic battle not found.", code="topic_battle_not_found")
+
+        participants = [str(uid) for uid in doc.get("participants", [])]
+        if user_id not in participants:
+            raise ConflictError("You have not joined this battle.", code="battle_not_joined")
+
+        completed_user_ids = [str(uid) for uid in doc.get("completed_user_ids", [])]
+        if user_id in completed_user_ids:
+            raise ConflictError("Cannot quit a completed battle.", code="battle_already_completed")
+
+        await self._repository.remove_participant(battle_id, user_id)
+        await self._record_event(
+            entity_type="topic_battle",
+            entity_id=battle_id,
+            event_type="quit",
+            actor_user_id=user_id,
+            detail={"remaining_participants": max(0, len(participants) - 1)},
+        )
+        await self._sync_battle_row_after_change(battle_id, user_id)
+        return QuitTopicBattleResponse(battle_id=battle_id, quit=True)
 
     # ========================================================================
     # Battle management table (per-battle, owner-only)

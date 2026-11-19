@@ -21,3 +21,5 @@ export { useLiveDuelSocket } from "./useLiveDuelSocket";
 export { useLiveMediaStream } from "./useLiveMediaStream";
 export { useLiveDuelRTC } from "./useLiveDuelRTC";
 export { topicBattleQueryKeys } from "./topicBattleQueryKeys";
+export { useTopicBattleParticipants } from "./useTopicBattleParticipants";
+export { useQuitTopicBattle } from "./useQuitTopicBattle";

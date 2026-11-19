@@ -18,6 +18,7 @@
 import { Clock, Swords, Trophy } from "lucide-react";
 
 import { ProgressBar } from "@/components/atoms/ProgressBar";
+import { QuitBattleButton } from "@/components/atoms/QuitBattleButton";
 import { cn } from "@/lib/utils";
 
 export interface QuizBattleHeaderProps {
@@ -28,6 +29,7 @@ export interface QuizBattleHeaderProps {
   timeProgress: number;
   /** Countdown label such as "03:24" or "0m 45s". */
   timeLeft: string;
+  onQuit?: () => void;
   className?: string;
 }
 
@@ -37,6 +39,7 @@ export function QuizBattleHeader({
   players,
   timeProgress,
   timeLeft,
+  onQuit,
   className,
 }: Readonly<QuizBattleHeaderProps>) {
 
@@ -71,6 +74,7 @@ export function QuizBattleHeader({
             <Clock className="size-3.5" aria-hidden />
             {timeLeft}
           </span>
+          {onQuit ? <QuitBattleButton onClick={onQuit} /> : null}
         </div>
       </div>
 

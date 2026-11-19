@@ -80,6 +80,7 @@ export function toDuelQuestion(q: PublicQuestionView): DuelQuestion | null {
     difficulty: q.difficulty,
     points: q.points || 100,
     hint: q.hintText || undefined,
+    timeLimitSeconds: q.timeLimitMinutes && q.timeLimitMinutes > 0 ? q.timeLimitMinutes * 60 : undefined,
   };
   const text = q.description || q.title;
 

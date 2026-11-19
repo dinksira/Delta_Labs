@@ -2,22 +2,10 @@
  * useDuelQuiz — client state machine for a duel quiz run.
  *
  * Owns the current question index, the in-flight/locked answer for the current
- * question, and a battle-wide countdown timer. It no longer grades: a submitted
- * answer is sent to the backend and the returned verdict becomes `lastResult`.
- * The battle is time-boxed and ends the moment the timer reaches zero,
- * regardless of unanswered questions.
- *
- * The deadline is enforced twice on purpose. The timer here is UX — it stops the
- * player from sitting on a question that no longer counts — but the server
- * applies its own deadline from the participant's join time, so a client that
- * lies about its clock simply has its answers rejected.
- *
- * @example
- * ```ts
- * const duel = useDuelQuiz(quiz, durationSeconds, submitAnswer);
- * duel.submitAnswer({ kind: "multiple_choice", optionId: "opt_a" });
- * // pending -> the server verdict reveals the result
- * ```
+ * question, and a per-question countdown timer. Answers are graded by the backend.
+ * Once answered, the participant can immediately advance to the next question
+ * without waiting for the timer to expire. If the timer expires before an answer
+ * is submitted, it automatically moves to the next question.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,14 +17,10 @@ import type {
 } from "@/modules/Competition/types/duelQuiz";
 import type { TopicBattleAnswerResult } from "@/modules/Competition/types/integrity";
 
-const SECONDS_PER_QUESTION = 30;
+const DEFAULT_QUESTION_SECONDS = 60;
 
 /**
  * Submits one answer and resolves with the server's verdict.
- *
- * Injected rather than imported so this hook stays testable and so the same
- * state machine can serve topic battles and live duels, which grade through
- * their own endpoint.
  */
 export type SubmitAnswerFn = (
   questionId: string,
@@ -70,36 +54,63 @@ export function useDuelQuiz(
   submitAnswer?: SubmitAnswerFn,
 ) {
   const totalQuestions = quiz?.questions.length ?? 0;
-  const totalTimeSeconds = useMemo(() => {
-    if (durationSeconds && durationSeconds > 0) {
+  const [state, setState] = useState<DuelState>(() => emptyState(totalQuestions));
+
+  const currentQuestion = quiz?.questions[state.currentQuestionIndex];
+
+  // Each question respects the host's configured timeLimitSeconds, falling back
+  // to durationSeconds (if small) or DEFAULT_QUESTION_SECONDS.
+  const questionTotalSeconds = useMemo(() => {
+    if (currentQuestion?.timeLimitSeconds && currentQuestion.timeLimitSeconds > 0) {
+      return currentQuestion.timeLimitSeconds;
+    }
+    if (durationSeconds && durationSeconds > 0 && durationSeconds <= 300) {
       return durationSeconds;
     }
-    return Math.max(SECONDS_PER_QUESTION, totalQuestions * SECONDS_PER_QUESTION);
-  }, [totalQuestions, durationSeconds]);
+    return DEFAULT_QUESTION_SECONDS;
+  }, [currentQuestion?.timeLimitSeconds, durationSeconds]);
 
-  const [state, setState] = useState<DuelState>(() => emptyState(totalQuestions));
-  const [timeLeftSeconds, setTimeLeftSeconds] = useState(totalTimeSeconds);
+  const [timeLeftSeconds, setTimeLeftSeconds] = useState(questionTotalSeconds);
 
-  // When the current question was first shown. Reported with the answer as
-  // advisory latency so the server can flag an impossibly fast response; the
-  // server cannot observe this itself and deliberately does not trust it.
+  // When the current question was first shown.
   const questionShownAt = useRef<number>(Date.now());
-  // Guards against a stale verdict landing after the player has moved on, which
-  // would otherwise apply to whatever question happens to be current.
   const submissionToken = useRef(0);
-  // Ref mirror of `isSubmitting`, so a double-click cannot fire a second submit
-  // before React has re-rendered with the state change.
   const inFlight = useRef(false);
 
-  const finished = state.currentQuestionIndex >= state.totalQuestions;
+  const finished = totalQuestions > 0 && state.currentQuestionIndex >= totalQuestions;
 
+  // Reset when quiz changes
   useEffect(() => {
     setState(emptyState(totalQuestions));
-    setTimeLeftSeconds(totalTimeSeconds);
-    questionShownAt.current = Date.now();
-  }, [totalQuestions, totalTimeSeconds]);
+  }, [totalQuestions]);
 
-  // Battle countdown: runs continuously until the duel is finished.
+  // Reset question timer and shown timestamp when question index changes
+  useEffect(() => {
+    setTimeLeftSeconds(questionTotalSeconds);
+    questionShownAt.current = Date.now();
+  }, [state.currentQuestionIndex, questionTotalSeconds]);
+
+  const advance = useCallback((force = false) => {
+    inFlight.current = false;
+    submissionToken.current += 1;
+    setState((prev) => {
+      if (!prev.isAnswered && !force) {
+        return prev;
+      }
+      const nextIndex = prev.currentQuestionIndex + 1;
+      return {
+        ...prev,
+        currentQuestionIndex: nextIndex,
+        answer: null,
+        isAnswered: false,
+        isSubmitting: false,
+        lastResult: null,
+      };
+    });
+    questionShownAt.current = Date.now();
+  }, []);
+
+  // Per-question countdown timer
   useEffect(() => {
     if (!quiz || finished) {
       return;
@@ -114,17 +125,17 @@ export function useDuelQuiz(
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [quiz, finished]);
+  }, [quiz, finished, state.currentQuestionIndex]);
 
-  // End the battle when the timer runs out, even mid-question.
+  // When question timer expires, auto-advance to next question immediately
   useEffect(() => {
     if (!quiz || finished) {
       return;
     }
     if (timeLeftSeconds <= 0) {
-      setState((prev) => ({ ...prev, currentQuestionIndex: prev.totalQuestions }));
+      advance(true);
     }
-  }, [timeLeftSeconds, quiz, finished, totalQuestions]);
+  }, [timeLeftSeconds, quiz, finished, advance]);
 
   const doSubmit = useCallback(
     async (answer: ParticipantAnswer) => {
@@ -144,8 +155,6 @@ export function useDuelQuiz(
 
       try {
         const result = await submitAnswer(question.id, answer, latencyMs);
-        // The player may have advanced or the run may have been reset while the
-        // request was in flight; drop the verdict rather than misapply it.
         if (token !== submissionToken.current) {
           return;
         }
@@ -166,8 +175,6 @@ export function useDuelQuiz(
         if (token !== submissionToken.current) {
           return;
         }
-        // Leave the answer unlocked so the player can retry. A failed submit is
-        // not a wrong answer, and treating it as one would lose their work.
         setState((prev) => ({ ...prev, isSubmitting: false }));
       } finally {
         if (token === submissionToken.current) {
@@ -185,35 +192,12 @@ export function useDuelQuiz(
     [doSubmit],
   );
 
-  const advance = useCallback(() => {
-    inFlight.current = false;
-    submissionToken.current += 1;
-    setState((prev) => {
-      if (!prev.isAnswered) {
-        return prev;
-      }
-      const nextIndex = prev.currentQuestionIndex + 1;
-      if (nextIndex > prev.totalQuestions) {
-        return prev;
-      }
-      return {
-        ...prev,
-        currentQuestionIndex: nextIndex,
-        answer: null,
-        isAnswered: false,
-        isSubmitting: false,
-        lastResult: null,
-      };
-    });
-    questionShownAt.current = Date.now();
-  }, []);
-
   const reset = useCallback(() => {
     submissionToken.current += 1;
     setState(emptyState(totalQuestions));
-    setTimeLeftSeconds(totalTimeSeconds);
+    setTimeLeftSeconds(questionTotalSeconds);
     questionShownAt.current = Date.now();
-  }, [totalQuestions, totalTimeSeconds]);
+  }, [totalQuestions, questionTotalSeconds]);
 
   const timeLeft = useMemo(() => formatTimeLeft(timeLeftSeconds), [timeLeftSeconds]);
 
@@ -221,9 +205,9 @@ export function useDuelQuiz(
     state,
     timeLeft,
     timeLeftSeconds,
-    totalTimeSeconds,
+    totalTimeSeconds: questionTotalSeconds,
     submitAnswer: submit,
-    advance,
+    advance: () => advance(false),
     reset,
   };
 }

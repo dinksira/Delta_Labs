@@ -327,7 +327,7 @@ export interface CreateBattleWizardContextValue extends CreateBattleWizardState 
   removeQuestion: (id: string) => void;
   setActiveQuestionId: (id: string) => void;
 
-  submitBattle: () => Promise<{ ok: boolean; message?: string }>;
+  submitBattle: () => Promise<{ ok: boolean; battleId?: string; message?: string }>;
 
   setSearchQuery: (query: string) => void;
   setFilter: (filter: string) => void;

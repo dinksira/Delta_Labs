@@ -191,3 +191,37 @@ export interface TopicBattleLeaderboard {
   entries: TopicBattleLeaderboardEntry[];
   totalCompleted: number;
 }
+
+export interface ParticipantAnswerDetail {
+  questionId: string;
+  questionTitle: string;
+  correct: boolean | null;
+  earnedPoints: number;
+  submittedAt: string | null;
+  latencyMs: number | null;
+}
+
+export interface ParticipantDetail {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  joinedAt: string | null;
+  hasCompleted: boolean;
+  totalPoints: number;
+  correctCount: number;
+  answeredCount: number;
+  answers: ParticipantAnswerDetail[];
+}
+
+export interface BattleParticipantsResponse {
+  battleId: string;
+  participants: ParticipantDetail[];
+  totalParticipants: number;
+  totalCompleted: number;
+}
+
+export interface QuitTopicBattleResponse {
+  battleId: string;
+  quit: boolean;
+}
+
