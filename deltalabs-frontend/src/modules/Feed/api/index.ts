@@ -313,8 +313,8 @@ export async function fetchFeedWorkerHealth(): Promise<FeedWorkerHealthDto> {
   return apiClient.get<FeedWorkerHealthDto>("/v1/feed/worker/health");
 }
 
-export async function fetchFeedCustomTab(): Promise<FeedCustomTabDto> {
-  return apiClient.get<FeedCustomTabDto>("/v1/me/feed/custom-tab");
+export async function fetchFeedCustomTab(): Promise<FeedCustomTabDto | null> {
+  return apiClient.get<FeedCustomTabDto | null>("/v1/me/feed/custom-tab");
 }
 
 export async function upsertFeedCustomTab(payload: FeedCustomTabUpsertDto): Promise<FeedCustomTabDto> {

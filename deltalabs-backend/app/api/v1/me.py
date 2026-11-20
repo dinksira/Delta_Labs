@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.api.deps import CurrentUser, get_current_user, get_db
@@ -91,21 +91,16 @@ async def list_my_schools(
 
 @router.get(
     "/feed/custom-tab",
-    response_model=FeedCustomTabResponse,
+    response_model=FeedCustomTabResponse | None,
 )
 async def get_my_feed_custom_tab(
     user: CurrentUser = Depends(get_current_user),  # noqa: B008
     db: AsyncIOMotorDatabase[dict[str, object]] = Depends(get_db),  # noqa: B008
-) -> FeedCustomTabResponse:
-    """Return the signed-in user's saved custom feed tab (label + feed filters)."""
+) -> FeedCustomTabResponse | None:
+    """Return the signed-in user's saved custom feed tab, or None when unconfigured."""
     service = _feed_custom_tab_service(db)
     await service.bootstrap_indexes()
     doc = await service.get_for_user(user_id=user.user_id)
-    if doc is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"code": "feed_custom_tab_not_configured"},
-        )
     return doc
 
 

@@ -160,7 +160,7 @@ app.on("ready", () => {
       return new Response(data, {
         headers: { 
           "Content-Type": getMimeType(filePath),
-          "Content-Security-Policy": "default-src 'self' app: https://delta-labs.onrender.com https://delta-labs-pi.vercel.app; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://delta-labs.onrender.com https://delta-labs-pi.vercel.app;"
+          "Content-Security-Policy": "default-src 'self' app: https://delta-labs-agbn.onrender.com wss://delta-labs-agbn.onrender.com https://delta-labs-pi.vercel.app; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://delta-labs-agbn.onrender.com wss://delta-labs-agbn.onrender.com https://delta-labs-pi.vercel.app;"
         }
       });
     } catch (err) {
@@ -173,7 +173,7 @@ app.on("ready", () => {
   // doesn't recognize. We modify outgoing Origin headers and inject CORS
   // headers on incoming responses so the renderer's fetch() succeeds.
   const { session } = require("electron");
-  const apiOrigin = "https://delta-labs.onrender.com";
+  const apiOrigin = "https://delta-labs-agbn.onrender.com";
 
   session.defaultSession.webRequest.onBeforeSendHeaders(
     { urls: [`${apiOrigin}/*`] },
