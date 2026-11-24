@@ -10,13 +10,16 @@
 import React, { useCallback, useDeferredValue, useState } from "react";
 
 import {
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Plus,
   RefreshCw,
   Search,
   UserCheck,
   UserX,
   Users,
+  X,
 } from "lucide-react";
 
 import { cn } from "@/lib/cn";
@@ -25,6 +28,7 @@ import { Button } from "@/components/theme/Button";
 import { Input } from "@/components/theme/Input";
 import { useUsersQuery } from "../hooks/useUsersQuery";
 import type { AdminUserListItem, UserListParams, UserStatusFilter } from "../types";
+import { CreateUserModal } from "./CreateUserModal";
 import { UserDetailPanel } from "./UserDetailPanel";
 
 // ===== CONSTANTS =====
@@ -98,6 +102,8 @@ export function UsersView() {
   const [statusFilter, setStatusFilter] = useState<UserStatusFilter>("all");
   const [page, setPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<AdminUserListItem | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const params: UserListParams = {
     q: deferredSearch || undefined,
@@ -141,17 +147,41 @@ export function UsersView() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 sm:flex">
             <UserCheck size={13} />
             Active
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600">
+          <div className="hidden items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 sm:flex">
             <UserX size={13} />
             Inactive
           </div>
+          <Button
+            size="sm"
+            leftIcon={<Plus size={15} />}
+            onClick={() => setIsCreateOpen(true)}
+          >
+            Add User
+          </Button>
         </div>
       </div>
+
+      {successMessage && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 size={16} />
+            {successMessage}
+          </span>
+          <button
+            type="button"
+            onClick={() => setSuccessMessage(null)}
+            className="rounded-md p-1 text-emerald-600 transition-colors hover:bg-emerald-100"
+            aria-label="Dismiss message"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       <div className="rounded-3xl border border-border-subtle bg-surface-secondary p-4 shadow-sm sm:p-5">
         <div className="flex flex-wrap items-center gap-3">
@@ -376,6 +406,14 @@ export function UsersView() {
       <UserDetailPanel
         user={selectedUser}
         onClose={() => setSelectedUser(null)}
+      />
+      <CreateUserModal
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onCreated={(message) => {
+          setSuccessMessage(message);
+          setPage(1);
+        }}
       />
     </div>
   );

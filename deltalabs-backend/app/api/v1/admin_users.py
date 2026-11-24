@@ -13,6 +13,7 @@ from app.domain.identity.admin_service import AdminUserService
 from app.domain.identity.repository import Repository
 from app.domain.identity.schemas import (
     AdminSessionRevokeResponse,
+    AdminUserCreateRequest,
     AdminUserDetail,
     AdminUserListResponse,
     AdminUserStatusUpdate,
@@ -50,6 +51,17 @@ async def list_admin_users(
         page=page,
         page_size=page_size,
     )
+
+
+@router.post("", response_model=AdminUserDetail, status_code=201)
+async def create_admin_user(
+    payload: AdminUserCreateRequest,
+    _admin: CurrentUser = Depends(require_system_admin),  # noqa: B008
+    db: AsyncIOMotorDatabase[dict[str, object]] = Depends(get_db),  # noqa: B008
+) -> AdminUserDetail:
+    """Create a new platform account."""
+    service = _service(db)
+    return await service.create_user(payload=payload)
 
 
 @router.get("/{user_id}", response_model=AdminUserDetail)

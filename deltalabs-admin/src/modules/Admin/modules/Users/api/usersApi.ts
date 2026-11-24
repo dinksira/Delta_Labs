@@ -12,6 +12,7 @@ import type {
   AdminUserDetail,
   AdminUserListItem,
   AdminUserListResponse,
+  CreateUserPayload,
   UserListParams,
   UserStatusUpdatePayload,
 } from "../types";
@@ -206,6 +207,18 @@ function filterLocalUsers(params: UserListParams): AdminUserListResponse {
 }
 
 // ===== API FUNCTIONS =====
+function isApiUnavailable(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    (error.status === 404 || error.status === 405 || error.status === 501)
+  );
+}
+
+function normalizeOptional(value?: string): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
 export const usersApi = {
   /**
    * List users with optional search, status filter, and pagination.
@@ -218,10 +231,71 @@ export const usersApi = {
         `/v1/admin/users${buildQuery(params)}`
       );
     } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
+      if (isApiUnavailable(error)) {
         return filterLocalUsers(params);
       }
       throw error;
+    }
+  },
+
+  /**
+   * Create a new user account.
+   */
+  createUser: async (payload: CreateUserPayload): Promise<AdminUserDetail> => {
+    const body = {
+      username: payload.username.trim(),
+      fullName: normalizeOptional(payload.fullName),
+      email: normalizeOptional(payload.email)?.toLowerCase() ?? null,
+      phoneE164: normalizeOptional(payload.phoneE164),
+      password: payload.password,
+      isActive: payload.isActive,
+      isVerified: payload.isVerified,
+    };
+
+    try {
+      return await apiClient<AdminUserDetail>("/v1/admin/users", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+    } catch (error) {
+      if (!isApiUnavailable(error)) throw error;
+
+      const username = body.username;
+      const email = body.email;
+      const phoneE164 = body.phoneE164;
+      const now = new Date().toISOString();
+      const existing = Array.from(localUsersStore.values());
+      if (
+        existing.some(
+          (u) => u.username.toLowerCase() === username.toLowerCase()
+        )
+      ) {
+        throw new ApiError(409, "Username already exists.");
+      }
+      if (email && existing.some((u) => u.email?.toLowerCase() === email)) {
+        throw new ApiError(409, "Email already exists.");
+      }
+      if (phoneE164 && existing.some((u) => u.phoneE164 === phoneE164)) {
+        throw new ApiError(409, "Phone number already exists.");
+      }
+
+      const created: AdminUserDetail = {
+        userId: `usr_local_${Date.now().toString(36)}`,
+        username,
+        fullName: body.fullName,
+        email,
+        phoneE164,
+        isActive: body.isActive,
+        isVerified: body.isVerified,
+        createdAt: now,
+        updatedAt: now,
+        bio: null,
+        avatarUrl: null,
+        activeSessions: 0,
+        lastSessionAt: null,
+      };
+      localUsersStore.set(created.userId, created);
+      return created;
     }
   },
 
@@ -232,7 +306,7 @@ export const usersApi = {
     try {
       return await apiClient<AdminUserDetail>(`/v1/admin/users/${userId}`);
     } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
+      if (isApiUnavailable(error)) {
         const found = localUsersStore.get(userId);
         if (found) return { ...found };
         throw new ApiError(404, "User not found.");
@@ -254,7 +328,7 @@ export const usersApi = {
         body: JSON.stringify(payload),
       });
     } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
+      if (isApiUnavailable(error)) {
         const found = localUsersStore.get(userId);
         if (!found) throw new ApiError(404, "User not found.");
         const updated: AdminUserDetail = {
@@ -282,7 +356,7 @@ export const usersApi = {
         { method: "POST" }
       );
     } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
+      if (isApiUnavailable(error)) {
         const found = localUsersStore.get(userId);
         const count = found?.activeSessions ?? 0;
         if (found) {

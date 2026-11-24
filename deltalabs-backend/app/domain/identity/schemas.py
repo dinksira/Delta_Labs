@@ -277,6 +277,20 @@ class AdminUserListResponse(BaseModel):
     total_pages: int = Field(serialization_alias="totalPages")
 
 
+class AdminUserCreateRequest(BaseModel):
+    """Payload for system-admin account creation."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    username: str = Field(min_length=3, max_length=40)
+    full_name: str | None = Field(default=None, alias="fullName", max_length=100)
+    email: str | None = Field(default=None, max_length=255)
+    phone_e164: str | None = Field(default=None, alias="phoneE164", max_length=32)
+    password: str = Field(min_length=10, max_length=256)
+    is_active: bool = Field(default=True, alias="isActive")
+    is_verified: bool = Field(default=False, alias="isVerified")
+
+
 class AdminUserStatusUpdate(BaseModel):
     """Payload to activate or deactivate an account."""
 

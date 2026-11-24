@@ -86,6 +86,9 @@ class Repository:
         email: str | None,
         phone_e164: str | None,
         password_hash: str,
+        full_name: str | None = None,
+        is_active: bool = True,
+        is_verified: bool = False,
     ) -> UserRecord:
         now = datetime.now(UTC)
         user_id = str(uuid4())
@@ -93,11 +96,16 @@ class Repository:
             "_id": user_id,
             "username": username,
             "username_normalized": username.strip().lower(),
+            "full_name": full_name,
             "email": email,
             "email_normalized": email.strip().lower() if email is not None else None,
             "phone_e164": phone_e164,
-            "is_active": True,
-            "is_verified": False,
+            "bio": None,
+            "avatar_url": None,
+            "followers_count": 0,
+            "following_count": 0,
+            "is_active": is_active,
+            "is_verified": is_verified,
             "created_at": now,
             "updated_at": now,
             "password_hash": password_hash,

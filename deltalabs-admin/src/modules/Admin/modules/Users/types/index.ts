@@ -7,6 +7,7 @@ export type {
   AdminUserDetail,
   AdminUserListItem,
   AdminUserListResponse,
+  CreateUserPayload,
   SortDirection,
   UserListParams,
   UserSortField,

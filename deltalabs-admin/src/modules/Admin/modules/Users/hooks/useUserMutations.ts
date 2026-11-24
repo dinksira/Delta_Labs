@@ -7,8 +7,20 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { usersApi } from "../api";
-import type { UserStatusUpdatePayload } from "../types";
+import type { CreateUserPayload, UserStatusUpdatePayload } from "../types";
 import { userQueryKeys } from "./queryKeys";
+
+// ===== CREATE USER =====
+export function useCreateUserMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateUserPayload) => usersApi.createUser(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: userQueryKeys.lists() });
+    },
+  });
+}
 
 // ===== UPDATE STATUS =====
 export function useUpdateUserStatusMutation() {

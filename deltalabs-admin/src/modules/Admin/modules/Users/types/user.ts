@@ -45,6 +45,16 @@ export interface UserListParams {
 }
 
 // ===== MUTATIONS =====
+export interface CreateUserPayload {
+  username: string;
+  fullName?: string;
+  email?: string;
+  phoneE164?: string;
+  password: string;
+  isActive: boolean;
+  isVerified: boolean;
+}
+
 export interface UserStatusUpdatePayload {
   isActive: boolean;
   reason?: string;

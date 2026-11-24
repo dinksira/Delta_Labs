@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from app.core.exceptions import NotFoundError, ValidationError
+from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.core.security import PasswordPolicyError, hash_password, validate_password_policy
 from app.domain.identity.repository import Repository
 from app.domain.identity.schemas import (
     AdminSessionRevokeResponse,
+    AdminUserCreateRequest,
     AdminUserDetail,
     AdminUserListItem,
     AdminUserListResponse,
@@ -47,6 +49,43 @@ class AdminUserService:
 
     async def get_user(self, *, user_id: str) -> AdminUserDetail:
         record = await self._require_user(user_id=user_id)
+        return await self._to_detail(record)
+
+    async def create_user(self, *, payload: AdminUserCreateRequest) -> AdminUserDetail:
+        username = payload.username.strip()
+        email = payload.email.strip().lower() if payload.email else None
+        phone_e164 = payload.phone_e164.strip() if payload.phone_e164 else None
+        full_name = payload.full_name.strip() if payload.full_name else None
+
+        if not username:
+            raise ValidationError("Username is required.", code="invalid_username")
+        if not email and not phone_e164:
+            raise ValidationError(
+                "Email or phone number is required.",
+                code="contact_required",
+            )
+
+        try:
+            validate_password_policy(payload.password)
+        except PasswordPolicyError as exc:
+            raise ValidationError(str(exc), code="password_policy_failed") from exc
+
+        if await self._repository.find_user_by_identity(username):
+            raise ConflictError("Username already exists.", code="username_already_exists")
+        if email and await self._repository.find_user_by_identity(email):
+            raise ConflictError("Email already exists.", code="email_already_exists")
+        if phone_e164 and await self._repository.find_user_by_identity(phone_e164):
+            raise ConflictError("Phone number already exists.", code="phone_already_exists")
+
+        record = await self._repository.create_user_with_password(
+            username=username,
+            email=email,
+            phone_e164=phone_e164,
+            password_hash=hash_password(payload.password),
+            full_name=full_name,
+            is_active=payload.is_active,
+            is_verified=payload.is_verified,
+        )
         return await self._to_detail(record)
 
     async def set_user_active(
