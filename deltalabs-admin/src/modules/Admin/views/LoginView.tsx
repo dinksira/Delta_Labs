@@ -15,14 +15,11 @@ import Image from "next/image";
 import {
   AlertCircle,
   ArrowRight,
-  CheckCircle2,
   Eye,
   EyeOff,
   KeyRound,
   LockKeyhole,
   Mail,
-  ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 
 import { Badge, Button, Card, Input } from "@/components/theme";
@@ -38,21 +35,6 @@ export type SupportedRole =
   | "School Principal"
   | "Content Moderator"
   | "Auditor / Finance";
-
-// ===== CONSTANTS =====
-const ROLE_HIGHLIGHTS: readonly SupportedRole[] = [
-  "Super Admin",
-  "Org Admin",
-  "School Principal",
-  "Content Moderator",
-  "Auditor / Finance",
-] as const;
-
-const PLATFORM_PILLARS = [
-  "Granular role-based access control (RBAC)",
-  "Audited, idempotent administrative actions",
-  "Real-time platform telemetry & stream monitoring",
-] as const;
 
 // ===== COMPONENT =====
 export function LoginView() {
@@ -116,78 +98,68 @@ export function LoginView() {
 
   return (
     <div className="grid min-h-screen bg-surface-canvas lg:grid-cols-12 selection:bg-primary-600 selection:text-white">
-      {/* Left Brand Showcase Panel - Solid dark base with deep brand gradient */}
       <aside className="relative hidden overflow-hidden bg-primary-950 p-12 text-white lg:flex lg:col-span-5 lg:flex-col lg:justify-between xl:col-span-6">
-        {/* Deep brand gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-950 via-primary-900 to-slate-900 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary-950 via-primary-900 to-primary-950" />
 
-        {/* Ambient subtle glowing orbs */}
-        <div className="absolute -right-20 -top-20 size-96 rounded-full bg-primary-600/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -left-20 size-96 rounded-full bg-primary-700/10 blur-3xl pointer-events-none" />
+        <div className="pointer-events-none absolute -right-48 -top-48 size-128 rounded-full bg-primary-600/20 blur-3xl" />
+        <div className="brand-sheen pointer-events-none absolute -inset-y-32 left-1/3 w-24 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="brand-logo-drift pointer-events-none absolute -bottom-24 -left-24 size-96 opacity-20 xl:size-128">
+          <Image
+            src="/delta-logo.svg"
+            alt=""
+            aria-hidden="true"
+            width={384}
+            height={384}
+            className="size-full object-contain"
+          />
+        </div>
+        <div className="brand-logo-drift-reverse pointer-events-none absolute -right-32 -top-24 size-96 opacity-10 xl:size-128">
+          <Image
+            src="/delta-logo.svg"
+            alt=""
+            aria-hidden="true"
+            width={384}
+            height={384}
+            className="size-full object-contain"
+          />
+        </div>
 
-        <div className="relative z-10">
-          <div className="flex items-center gap-3">
+        <div className="relative z-10 flex items-center gap-3">
+          <span className="flex size-10 items-center justify-center rounded-xl border border-white/15 bg-white/10">
             <Image
               src="/delta-logo.svg"
               alt="Delta Labs"
-              width={40}
-              height={40}
-              className="size-10 object-contain drop-shadow"
+              width={32}
+              height={32}
+              className="size-7 object-contain"
             />
-            <div>
-              <p className="text-sm font-bold tracking-wider text-white">DELTA LABS</p>
-              <p className="text-[11px] font-medium text-white/70">Enterprise Admin Portal</p>
-            </div>
+          </span>
+          <div>
+            <p className="text-sm font-black tracking-widest text-white">DELTA LABS</p>
+            <p className="text-xs font-medium text-white/60">Admin Console</p>
           </div>
-
-          <div className="mt-14">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1 text-xs font-semibold text-white/90 backdrop-blur-md">
-              <Sparkles size={13} className="text-amber-300" />
-              <span>Version 2.0 Command Center</span>
-            </div>
-
-            <h1 className="mt-5 max-w-lg text-3xl font-bold tracking-tight leading-tight text-white xl:text-4xl">
-              Command the entire Delta Labs ecosystem with precision.
-            </h1>
-
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/80">
-              Centralized enterprise governance for multi-tenant schools, courses, live competitions, media pipelines, and financial ledgers.
-            </p>
-          </div>
-
-          <ul className="mt-8 space-y-3">
-            {PLATFORM_PILLARS.map((pillar) => (
-              <li key={pillar} className="flex items-center gap-3 text-sm font-medium">
-                <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
-                  <CheckCircle2 size={13} />
-                </div>
-                <span className="text-white/90">{pillar}</span>
-              </li>
-            ))}
-          </ul>
         </div>
 
-        <div className="relative z-10 space-y-6 pt-8">
-          <div>
-            <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-white/60">
-              Governed Access Scopes
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {ROLE_HIGHLIGHTS.map((role) => (
-                <span
-                  key={role}
-                  className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur-sm"
-                >
-                  {role}
-                </span>
-              ))}
-            </div>
-          </div>
+        <div className="relative z-10">
+          <p className="text-xs font-bold uppercase tracking-widest text-white/40">
+            Platform governance
+          </p>
+          <h1 className="mt-6 max-w-xl text-4xl font-black leading-tight tracking-tight text-white xl:text-5xl">
+            One console.
+            <br />
+            Every lab.
+          </h1>
+          <p className="mt-5 max-w-sm text-sm leading-relaxed text-white/60">
+            A quieter way to command the Delta Labs ecosystem.
+          </p>
+        </div>
 
-          <div className="flex items-center justify-between border-t border-white/15 pt-5 text-xs text-white/50">
-            <span>Authorized personnel only. All access logged.</span>
-            <span className="font-mono text-white/70">SECURE-TLS 1.3</span>
+        <div className="relative z-10 flex items-end justify-between gap-6 border-t border-white/10 pt-6">
+          <div>
+            <p className="text-xs font-bold tracking-widest text-white/70">SECURE ADMIN ACCESS</p>
+            <p className="mt-1 text-xs text-white/40">Authorized operations only</p>
           </div>
+          <span className="h-px w-16 bg-white/30" aria-hidden="true" />
         </div>
       </aside>
 
@@ -303,12 +275,6 @@ export function LoginView() {
               </button>
             </div>
 
-            <div className="mt-6 flex items-center gap-3 rounded-xl bg-surface-muted p-3 text-xs text-text-secondary border border-border-subtle">
-              <ShieldCheck size={18} className="shrink-0 text-primary-600" />
-              <span>
-                Protected by enterprise role guards, TLS encryption, and audit telemetry.
-              </span>
-            </div>
           </Card>
         </div>
       </main>

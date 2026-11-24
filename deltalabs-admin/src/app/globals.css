@@ -6,3 +6,55 @@ body {
   color: var(--color-text-primary);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
+
+@keyframes brand-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-18deg) scale(1);
+  }
+  50% {
+    transform: translate3d(2%, -3%, 0) rotate(-12deg) scale(1.03);
+  }
+}
+
+@keyframes brand-drift-reverse {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(14deg) scale(1);
+  }
+  50% {
+    transform: translate3d(-2%, 3%, 0) rotate(20deg) scale(1.04);
+  }
+}
+
+@keyframes brand-sheen {
+  0%,
+  100% {
+    transform: translate3d(-8%, 0, 0) rotate(45deg);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate3d(8%, 0, 0) rotate(45deg);
+    opacity: 0.65;
+  }
+}
+
+.brand-logo-drift {
+  animation: brand-drift 14s ease-in-out infinite;
+}
+
+.brand-logo-drift-reverse {
+  animation: brand-drift-reverse 18s ease-in-out infinite;
+}
+
+.brand-sheen {
+  animation: brand-sheen 16s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-logo-drift,
+  .brand-logo-drift-reverse,
+  .brand-sheen {
+    animation: none;
+  }
+}
