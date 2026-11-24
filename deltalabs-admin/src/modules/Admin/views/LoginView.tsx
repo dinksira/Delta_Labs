@@ -125,15 +125,13 @@ export function LoginView() {
         </div>
 
         <div className="relative z-10 flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-xl border border-white/15 bg-white/10">
-            <Image
-              src="/delta-logo.svg"
-              alt="Delta Labs"
-              width={32}
-              height={32}
-              className="size-7 object-contain"
-            />
-          </span>
+          <Image
+            src="/delta-logo.svg"
+            alt="Delta Labs"
+            width={36}
+            height={36}
+            className="size-9 object-contain drop-shadow"
+          />
           <div>
             <p className="text-sm font-black tracking-widest text-white">DELTA LABS</p>
             <p className="text-xs font-medium text-white/60">Admin Console</p>
