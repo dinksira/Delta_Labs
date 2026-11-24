@@ -2,26 +2,26 @@
 
 /**
  * @file UserDetailPanel.tsx
- * @description Slide-out panel showing full user detail with moderation actions.
+ * @description Centered modal showing full user detail with moderation actions.
  * Fetches data from the backend via useUserDetailQuery.
  */
 
 // ===== IMPORTS =====
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import {
   AlertTriangle,
+  Calendar,
   CheckCircle2,
+  Clock3,
   LogOut,
   Mail,
-  Phone,
+  Shield,
   ShieldOff,
-  User,
   X,
   XCircle,
 } from "lucide-react";
-
-import { cn } from "@/lib/cn";
 import { Badge } from "@/components/theme/Badge";
 import { Button } from "@/components/theme/Button";
 import { useUserDetailQuery } from "../hooks/useUserDetailQuery";
@@ -63,32 +63,54 @@ function getInitials(name: string | null, username: string): string {
 
 // ===== COMPONENT =====
 export function UserDetailPanel({ user, onClose }: UserDetailPanelProps) {
-  const panelRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
   const [banReason, setBanReason] = useState("");
   const [confirmAction, setConfirmAction] = useState<
     "deactivate" | "activate" | "revoke" | null
   >(null);
 
-  const { data: detail, isLoading, isError } = useUserDetailQuery(user?.userId ?? null);
+  const { data: detail, isLoading, isError } = useUserDetailQuery(
+    user?.userId ?? null
+  );
   const updateStatus = useUpdateUserStatusMutation();
   const revokeSessions = useRevokeSessionsMutation();
 
   const isOpen = user !== null;
+  const displayUser = detail ?? user;
 
-  // Close on Escape
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    setConfirmAction(null);
+    setBanReason("");
+  }, [user?.userId]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-    if (isOpen) document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleKey);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKey);
+    };
   }, [isOpen, onClose]);
 
-  // ===== ACTION HANDLERS =====
   const handleDeactivate = () => {
     if (!detail) return;
     updateStatus.mutate(
-      { userId: detail.userId, payload: { isActive: false, reason: banReason || undefined } },
+      {
+        userId: detail.userId,
+        payload: { isActive: false, reason: banReason || undefined },
+      },
       {
         onSuccess: () => {
           setConfirmAction(null);
@@ -113,158 +135,180 @@ export function UserDetailPanel({ user, onClose }: UserDetailPanelProps) {
     });
   };
 
-  // ===== RENDER =====
-  return (
-    <>
-      {/* Backdrop */}
+  if (!mounted || !isOpen || !displayUser) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       <div
-        className={cn(
-          "fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300",
-          isOpen ? "opacity-100" : "pointer-events-none opacity-0"
-        )}
+        className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Panel */}
       <div
-        ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="User Detail"
-        className={cn(
-          "fixed right-0 top-0 z-50 flex h-full w-full max-w-[520px] flex-col bg-surface-secondary shadow-2xl transition-transform duration-300 ease-in-out",
-          isOpen ? "translate-x-0" : "translate-x-full"
-        )}
+        aria-label="User details"
+        className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-border-subtle bg-surface-secondary shadow-2xl"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
-          <h2 className="text-base font-semibold text-text-primary">User Details</h2>
+        <div className="relative border-b border-border-subtle bg-gradient-to-br from-primary-50 via-surface-secondary to-surface-muted px-6 py-6 sm:px-8">
+          <div className="absolute -right-10 -top-10 size-32 rounded-full bg-primary-100/70 blur-2xl" />
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-text-tertiary transition-colors hover:bg-surface-muted hover:text-text-primary"
-            aria-label="Close panel"
+            className="absolute right-4 top-4 rounded-xl p-2 text-text-tertiary transition-colors hover:bg-white/80 hover:text-text-primary"
+            aria-label="Close user details"
           >
             <X size={18} />
           </button>
+
+          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start">
+            <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary-900 text-xl font-black text-white shadow-lg ring-4 ring-white">
+              {detail?.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={detail.avatarUrl}
+                  alt={displayUser.username}
+                  className="size-full object-cover"
+                />
+              ) : (
+                getInitials(displayUser.fullName, displayUser.username)
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1 pr-8">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="truncate text-xl font-black tracking-tight text-text-primary sm:text-2xl">
+                  {displayUser.fullName ?? displayUser.username}
+                </h2>
+                <Badge
+                  variant={displayUser.isActive ? "success" : "danger"}
+                  size="sm"
+                >
+                  {displayUser.isActive ? "Active" : "Inactive"}
+                </Badge>
+                {displayUser.isVerified && (
+                  <Badge variant="info" size="sm">
+                    Verified
+                  </Badge>
+                )}
+              </div>
+              <p className="mt-1 text-sm font-medium text-text-secondary">
+                @{displayUser.username}
+              </p>
+              <p className="mt-3 max-w-2xl text-sm text-text-tertiary">
+                {detail?.bio || "Review account details, session activity, and moderation actions."}
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8">
           {isLoading && (
-            <div className="flex h-48 items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+            <div className="flex h-52 items-center justify-center">
+              <div className="size-10 animate-spin rounded-full border-2 border-primary-200 border-t-primary-700" />
             </div>
           )}
 
           {isError && (
-            <div className="m-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
               Failed to load user details. Please try again.
             </div>
           )}
 
-          {detail && (
-            <div className="p-6 space-y-6">
-              {/* ── Avatar + Identity ── */}
-              <div className="flex items-start gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary-100 text-xl font-bold text-primary-700">
-                  {detail.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={detail.avatarUrl}
-                      alt={detail.username}
-                      className="h-16 w-16 rounded-2xl object-cover"
-                    />
-                  ) : (
-                    getInitials(detail.fullName, detail.username)
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-lg font-semibold text-text-primary truncate">
-                      {detail.fullName ?? detail.username}
-                    </span>
-                    <Badge variant={detail.isActive ? "success" : "danger"} size="sm">
-                      {detail.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                    {detail.isVerified && (
-                      <Badge variant="info" size="sm">Verified</Badge>
-                    )}
+          {!isLoading && !isError && detail && (
+            <div className="space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-border-subtle bg-surface-muted/60 p-4">
+                  <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
+                    <Mail size={14} />
+                    Contact
+                  </p>
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <p className="text-xs text-text-tertiary">Email</p>
+                      <p className="mt-0.5 break-all font-medium text-text-primary">
+                        {detail.email ?? "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-tertiary">Phone</p>
+                      <p className="mt-0.5 font-medium text-text-primary">
+                        {detail.phoneE164 ?? "—"}
+                      </p>
+                    </div>
                   </div>
-                  <p className="mt-0.5 text-sm text-text-secondary">@{detail.username}</p>
-                  {detail.bio && (
-                    <p className="mt-2 text-sm text-text-tertiary line-clamp-2">{detail.bio}</p>
-                  )}
                 </div>
-              </div>
 
-              {/* ── Contact Info ── */}
-              <div className="rounded-xl border border-border-subtle bg-surface-muted p-4 space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">
-                  Contact Information
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 text-sm">
-                    <Mail size={14} className="shrink-0 text-text-tertiary" />
-                    <span className="text-text-primary">{detail.email ?? "—"}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <Phone size={14} className="shrink-0 text-text-tertiary" />
-                    <span className="text-text-primary">{detail.phoneE164 ?? "—"}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <User size={14} className="shrink-0 text-text-tertiary" />
-                    <span className="font-mono text-xs text-text-tertiary break-all">{detail.userId}</span>
+                <div className="rounded-2xl border border-border-subtle bg-surface-muted/60 p-4">
+                  <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
+                    <Shield size={14} />
+                    Account
+                  </p>
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <p className="text-xs text-text-tertiary">User ID</p>
+                      <p className="mt-0.5 break-all font-mono text-xs text-text-primary">
+                        {detail.userId}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-tertiary">Active Sessions</p>
+                      <p className="mt-0.5 font-medium text-text-primary">
+                        {detail.activeSessions === 0 ? "None" : detail.activeSessions}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* ── Account Timestamps ── */}
-              <div className="rounded-xl border border-border-subtle bg-surface-muted p-4 space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">
-                  Account Timeline
-                </h3>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-2xl border border-border-subtle bg-surface-muted/60 p-4">
+                <p className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-text-tertiary">
+                  <Calendar size={14} />
+                  Timeline
+                </p>
+                <div className="grid gap-4 sm:grid-cols-3">
                   <div>
                     <p className="text-xs text-text-tertiary">Joined</p>
-                    <p className="mt-0.5 font-medium text-text-primary">{formatDate(detail.createdAt)}</p>
+                    <p className="mt-1 text-sm font-semibold text-text-primary">
+                      {formatDate(detail.createdAt)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-text-tertiary">Last Updated</p>
-                    <p className="mt-0.5 font-medium text-text-primary">{formatDate(detail.updatedAt)}</p>
+                    <p className="mt-1 text-sm font-semibold text-text-primary">
+                      {formatDate(detail.updatedAt)}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs text-text-tertiary">Last Session</p>
-                    <p className="mt-0.5 font-medium text-text-primary">{formatDate(detail.lastSessionAt)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-text-tertiary">Active Sessions</p>
-                    <p className="mt-0.5 font-medium text-text-primary">
-                      {detail.activeSessions === 0 ? "None" : detail.activeSessions}
+                    <p className="flex items-center gap-1 text-xs text-text-tertiary">
+                      <Clock3 size={12} />
+                      Last Session
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-text-primary">
+                      {formatDate(detail.lastSessionAt)}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* ── Confirm Action Block ── */}
               {confirmAction === "deactivate" && (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-red-700">
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
+                  <div className="flex items-center gap-2 text-sm font-bold text-red-700">
                     <AlertTriangle size={15} />
                     Confirm Account Deactivation
                   </div>
-                  <p className="text-xs text-red-600">
+                  <p className="mt-2 text-xs text-red-600">
                     This will deactivate the account and revoke all active sessions immediately.
                   </p>
                   <textarea
                     value={banReason}
                     onChange={(e) => setBanReason(e.target.value)}
                     placeholder="Reason (optional)"
-                    className="w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
+                    className="mt-3 w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-red-200"
                     rows={2}
                     maxLength={500}
                   />
-                  <div className="flex gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       size="sm"
                       variant="danger"
@@ -276,7 +320,10 @@ export function UserDetailPanel({ user, onClose }: UserDetailPanelProps) {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => { setConfirmAction(null); setBanReason(""); }}
+                      onClick={() => {
+                        setConfirmAction(null);
+                        setBanReason("");
+                      }}
                     >
                       Cancel
                     </Button>
@@ -285,15 +332,15 @@ export function UserDetailPanel({ user, onClose }: UserDetailPanelProps) {
               )}
 
               {confirmAction === "activate" && (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="flex items-center gap-2 text-sm font-bold text-emerald-700">
                     <CheckCircle2 size={15} />
                     Confirm Account Activation
                   </div>
-                  <p className="text-xs text-emerald-600">
+                  <p className="mt-2 text-xs text-emerald-600">
                     This will re-enable the account so the user can sign in again.
                   </p>
-                  <div className="flex gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       size="sm"
                       variant="primary"
@@ -302,7 +349,11 @@ export function UserDetailPanel({ user, onClose }: UserDetailPanelProps) {
                     >
                       Activate
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setConfirmAction(null)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setConfirmAction(null)}
+                    >
                       Cancel
                     </Button>
                   </div>
@@ -310,15 +361,15 @@ export function UserDetailPanel({ user, onClose }: UserDetailPanelProps) {
               )}
 
               {confirmAction === "revoke" && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-amber-700">
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                  <div className="flex items-center gap-2 text-sm font-bold text-amber-700">
                     <AlertTriangle size={15} />
                     Revoke All Sessions
                   </div>
-                  <p className="text-xs text-amber-600">
+                  <p className="mt-2 text-xs text-amber-600">
                     The user will be signed out of all devices immediately. Their account stays active.
                   </p>
-                  <div className="flex gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       size="sm"
                       variant="secondary"
@@ -327,79 +378,85 @@ export function UserDetailPanel({ user, onClose }: UserDetailPanelProps) {
                     >
                       Revoke Sessions
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setConfirmAction(null)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setConfirmAction(null)}
+                    >
                       Cancel
                     </Button>
                   </div>
                 </div>
               )}
 
-              {/* ── Mutation feedback ── */}
-              {(updateStatus.isSuccess || revokeSessions.isSuccess) && !confirmAction && (
-                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                  <CheckCircle2 size={15} />
-                  Action completed successfully.
-                </div>
-              )}
+              {(updateStatus.isSuccess || revokeSessions.isSuccess) &&
+                !confirmAction && (
+                  <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+                    <CheckCircle2 size={15} />
+                    Action completed successfully.
+                  </div>
+                )}
             </div>
           )}
         </div>
 
-        {/* Footer — Moderation Actions */}
         {detail && !isLoading && (
-          <div className="border-t border-border-subtle px-6 py-4">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-text-tertiary">
-              Moderation Actions
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {detail.isActive ? (
-                <Button
-                  size="sm"
-                  variant="danger"
-                  leftIcon={<XCircle size={14} />}
-                  onClick={() => setConfirmAction("deactivate")}
-                  disabled={confirmAction !== null}
-                >
-                  Deactivate Account
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="primary"
-                  leftIcon={<CheckCircle2 size={14} />}
-                  onClick={() => setConfirmAction("activate")}
-                  disabled={confirmAction !== null}
-                >
-                  Activate Account
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant="secondary"
-                leftIcon={<LogOut size={14} />}
-                onClick={() => setConfirmAction("revoke")}
-                disabled={confirmAction !== null || detail.activeSessions === 0}
-              >
-                Revoke Sessions
-                {detail.activeSessions > 0 && (
-                  <span className="ml-1 rounded-full bg-amber-200 px-1.5 py-px text-xs font-bold text-amber-800">
-                    {detail.activeSessions}
-                  </span>
+          <div className="border-t border-border-subtle bg-surface-muted/30 px-6 py-4 sm:px-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs font-bold uppercase tracking-wider text-text-tertiary">
+                Moderation Actions
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {detail.isActive ? (
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    leftIcon={<XCircle size={14} />}
+                    onClick={() => setConfirmAction("deactivate")}
+                    disabled={confirmAction !== null}
+                  >
+                    Deactivate
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    leftIcon={<CheckCircle2 size={14} />}
+                    onClick={() => setConfirmAction("activate")}
+                    disabled={confirmAction !== null}
+                  >
+                    Activate
+                  </Button>
                 )}
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                leftIcon={<ShieldOff size={14} />}
-                disabled
-                title="Coming soon"
-              >
-                Force Password Reset
-              </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  leftIcon={<LogOut size={14} />}
+                  onClick={() => setConfirmAction("revoke")}
+                  disabled={confirmAction !== null || detail.activeSessions === 0}
+                >
+                  Revoke Sessions
+                  {detail.activeSessions > 0 && (
+                    <span className="ml-1 rounded-full bg-amber-200 px-1.5 py-px text-xs font-bold text-amber-900">
+                      {detail.activeSessions}
+                    </span>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  leftIcon={<ShieldOff size={14} />}
+                  disabled
+                  title="Coming soon"
+                >
+                  Reset Password
+                </Button>
+              </div>
             </div>
           </div>
         )}
       </div>
-    </>
+    </div>,
+    document.body
   );
 }
