@@ -6,7 +6,7 @@
  */
 
 // ===== IMPORTS =====
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { Eye, EyeOff, Mail, Phone, ShieldCheck, UserPlus } from "lucide-react";
 
@@ -87,14 +87,18 @@ export function CreateUserModal({ open, onClose, onCreated }: CreateUserModalPro
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const createUser = useCreateUserMutation();
+  const resetCreateUser = createUser.reset;
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
-    if (!open) return;
-    setForm(INITIAL_FORM);
-    setErrors({});
-    setShowPassword(false);
-    createUser.reset();
-  }, [open, createUser]);
+    if (open && !wasOpenRef.current) {
+      setForm(INITIAL_FORM);
+      setErrors({});
+      setShowPassword(false);
+      resetCreateUser();
+    }
+    wasOpenRef.current = open;
+  }, [open, resetCreateUser]);
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
